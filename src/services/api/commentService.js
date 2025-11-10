@@ -286,5 +286,46 @@ export const commentService = {
       console.error("Error unliking comment:", error?.response?.data?.message || error)
       return null
     }
+},
+
+  async getByPostId(postId) {
+    try {
+      const apperClient = getApperClient();
+      if (!apperClient) {
+        console.error("ApperClient not available");
+        return [];
+      }
+
+      const response = await apperClient.fetchRecords('comment_c', {
+        fields: [
+          {"field": {"Name": "Name"}},
+          {"field": {"Name": "content_c"}},
+          {"field": {"Name": "likes_c"}},
+          {"field": {"Name": "author_id_c"}, "referenceField": {"field": {"Name": "Name"}}},
+          {"field": {"Name": "author_id_c"}, "referenceField": {"field": {"Name": "username_c"}}},
+          {"field": {"Name": "author_id_c"}, "referenceField": {"field": {"Name": "profile_picture_c"}}},
+          {"field": {"Name": "post_id_c"}},
+          {"field": {"Name": "parent_id_c"}},
+          {"field": {"Name": "CreatedOn"}}
+        ],
+        where: [{
+          "FieldName": "post_id_c",
+          "Operator": "EqualTo",
+          "Values": [parseInt(postId)]
+        }],
+        orderBy: [{"fieldName": "CreatedOn", "sorttype": "ASC"}],
+        pagingInfo: { limit: 100, offset: 0 }
+      });
+
+      if (!response.success) {
+        console.error("Failed to fetch comments for post:", response.message);
+        return [];
+      }
+
+      return response.data || [];
+    } catch (error) {
+      console.error(`Error fetching comments for post ${postId}:`, error?.response?.data?.message || error);
+      return [];
+    }
   }
 }

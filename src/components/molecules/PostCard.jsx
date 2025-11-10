@@ -51,10 +51,16 @@ setLikesCount(prev => newLikedState ? prev + 1 : prev - 1)
   }
 
 useEffect(() => {
-    if (showComments) {
+    // Fetch comments on component mount to ensure they're available after page refresh
+    fetchComments()
+  }, [post.Id])
+
+  // Separate effect to handle comments visibility toggle
+  useEffect(() => {
+    if (showComments && comments.length === 0) {
       fetchComments()
     }
-  }, [showComments, post.Id])
+  }, [showComments])
 
   const fetchComments = async () => {
     try {
