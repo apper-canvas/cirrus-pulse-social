@@ -1,5 +1,4 @@
 import { getApperClient } from "@/services/apperClient";
-
 export const userService = {
   async getAll() {
     try {
@@ -32,8 +31,7 @@ export const userService = {
     } catch (error) {
       console.error("Error fetching users:", error?.response?.data?.message || error);
       return [];
-    }
-  },
+}
   },
 
   async getCurrentUserProfile(userEmail) {
@@ -240,6 +238,5 @@ console.error(`Failed to delete ${failed.length} users:`, failed);
       console.error("Error deleting user:", error?.response?.data?.message || error);
       return false;
     }
-  }
-};
 }
+};

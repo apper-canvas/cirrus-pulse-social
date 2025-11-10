@@ -34,12 +34,11 @@ const [likesCount, setLikesCount] = useState((post.likes || []).length)
     try {
       const newLikedState = !isLiked
       setIsLiked(newLikedState)
-      setLikesCount(prev => newLikedState ? prev + 1 : prev - 1)
+setLikesCount(prev => newLikedState ? prev + 1 : prev - 1)
       
-      if (onLike) {
-        await onLike(post.Id, newLikedState)
+      if (onUpdate?.onLike) {
+        await onUpdate.onLike(post.Id, newLikedState)
       }
-      
       if (newLikedState) {
         toast.success("Post liked!", { autoClose: 1000 })
       }
@@ -93,12 +92,11 @@ const newComment = await commentService.create({
         [newComment.Id]: { isLiked: false, count: 0 }
       }))
       setCommentText("")
-      toast.success("Comment added!", { autoClose: 1000 })
+toast.success("Comment added!", { autoClose: 1000 })
       
-      if (onComment) {
-        await onComment(post.Id, commentText.trim())
+      if (onUpdate?.onComment) {
+        await onUpdate.onComment(post.Id, commentText.trim())
       }
-    } catch (error) {
       toast.error("Failed to add comment")
     }
   }
@@ -260,27 +258,29 @@ const renderComment = (comment, isReply = false) => {
       className
     )}>
       {/* Post Header */}
-      <div className="p-4 pb-3">
-<div className="flex items-center space-x-3">
-          <Avatar
-            src={post.author_id_c?.profile_picture_c || ""}
-            alt={post.author_id_c?.username_c || post.author_id_c?.Name}
-            size="md"
-            online={true}
-          />
-          <div className="flex-1">
-            <div className="flex items-center space-x-2">
-<h3 className="font-semibold text-gray-900">{post.author_id_c?.Name || 'Unknown User'}</h3>
-              <span className="text-gray-400">•</span>
-              <span className="text-sm text-gray-500">
-                 {formatDistanceToNow(new Date(post.CreatedOn || post.createdAt), { addSuffix: true })}
-              </span>
+<div className="p-4 pb-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-3">
+            <Avatar
+              src={post.author_id_c?.profile_picture_c || ""}
+              alt={post.author_id_c?.username_c || post.author_id_c?.Name}
+              size="md"
+              online={true}
+            />
+            <div className="flex-1">
+              <div className="flex items-center space-x-2">
+                <h3 className="font-semibold text-gray-900">{post.author_id_c?.Name || 'Unknown User'}</h3>
+                <span className="text-gray-400">•</span>
+                <span className="text-sm text-gray-500">
+                   {formatDistanceToNow(new Date(post.CreatedOn || post.createdAt), { addSuffix: true })}
+                </span>
+              </div>
+              {post.author_id_c?.bio_c && (
+                <p className="text-xs text-gray-500 mt-1">{post.author_id_c.bio_c}</p>
+              )}
             </div>
-{post.author_id_c?.bio_c && (
-              <p className="text-xs text-gray-500 mt-1">{post.author_id_c.bio_c}</p>
-            )}
           </div>
-        </div>
+          <button className="p-2 rounded-full hover:bg-gray-100 transition-colors">
             <ApperIcon name="MoreHorizontal" className="h-4 w-4 text-gray-400" />
           </button>
         </div>
