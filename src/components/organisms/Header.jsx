@@ -11,8 +11,6 @@ const Header = ({ onMobileMenuClick, onNotificationClick, onChatOpen }) => {
   const [searchQuery, setSearchQuery] = useState("")
   const [showProfileMenu, setShowProfileMenu] = useState(false)
 const navigate = useNavigate()
-  const { useSelector } = require("react-redux")
-  const { useAuth } = require("@/layouts/Root")
 
   const handleSearch = (query) => {
     console.log("Searching for:", query)

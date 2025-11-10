@@ -11,6 +11,7 @@ const NotificationPanel = ({ isOpen, onClose }) => {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
   const [filter, setFilter] = useState("all")
+  const { user } = useSelector((state) => state.user)
 
   useEffect(() => {
     if (isOpen) {
@@ -18,11 +19,10 @@ const NotificationPanel = ({ isOpen, onClose }) => {
     }
   }, [isOpen])
 
-  const loadNotifications = async () => {
+const loadNotifications = async () => {
     try {
       setLoading(true)
       setError("")
-const { user } = useSelector((state) => state.user)
       const currentUserId = user?.userId || user?.Id || "1"
       
       const data = await notificationService.getByUserId(currentUserId)
