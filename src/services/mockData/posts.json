@@ -1,0 +1,92 @@
+[
+  {
+    "Id": 1,
+    "authorId": "2",
+    "content": "Just captured this amazing sunset during my evening walk! Sometimes the best moments happen when you least expect them. The colors were absolutely breathtaking - mother nature never fails to amaze me. 🌅 #photography #sunset #grateful",
+    "imageUrl": "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
+    "likes": ["1", "3", "4", "5"],
+    "commentCount": 12,
+    "createdAt": "2024-01-20T18:30:00Z"
+  },
+  {
+    "Id": 2,
+    "authorId": "1",
+    "content": "Finally finished my latest project! 🎉 Spent weeks debugging this feature, but the satisfaction when everything clicks is unmatched. Time for some well-deserved coffee. ☕ Anyone else celebrating small wins today?",
+    "imageUrl": "",
+    "likes": ["2", "3", "4"],
+    "commentCount": 8,
+    "createdAt": "2024-01-20T16:45:00Z"
+  },
+  {
+    "Id": 3,
+    "authorId": "3",
+    "content": "Greetings from beautiful Bali! 🌴 Working from this co-working space with an ocean view. The digital nomad life has its perks! Currently planning my next destination - thinking Tokyo might be calling. Where should I explore next?",
+    "imageUrl": "https://images.unsplash.com/photo-1469474968028-56623f02e42e?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
+    "likes": ["1", "2", "4", "5", "7"],
+    "commentCount": 15,
+    "createdAt": "2024-01-20T14:20:00Z"
+  },
+  {
+    "Id": 4,
+    "authorId": "4",
+    "content": "Excited to share my latest UX design! This dashboard concept focuses on simplicity and user delight. Clean interfaces make all the difference in user experience. What do you think about the color palette? Feedback always welcome! ✨",
+    "imageUrl": "https://images.unsplash.com/photo-1561070791-2526d30994b5?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
+    "likes": ["1", "3", "5"],
+    "commentCount": 6,
+    "createdAt": "2024-01-20T12:15:00Z"
+  },
+  {
+    "Id": 5,
+    "authorId": "5",
+    "content": "Band practice session tonight! 🎸 Working on some new original songs. Music has this incredible power to bring people together and express emotions that words alone can't capture. Can't wait to share our sound with everyone soon!",
+    "imageUrl": "",
+    "likes": ["1", "2", "4", "7"],
+    "commentCount": 9,
+    "createdAt": "2024-01-20T10:30:00Z"
+  },
+  {
+    "Id": 6,
+    "authorId": "6",
+    "content": "Just tried this amazing fusion recipe - Korean-Mexican tacos! 🌮 The combination of kimchi and traditional Mexican flavors is absolutely divine. Recipe coming to the blog soon! Who loves experimenting with international cuisines?",
+    "imageUrl": "https://images.unsplash.com/photo-1551504734-5ee1c4a1479b?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
+    "likes": ["4"],
+    "commentCount": 4,
+    "createdAt": "2024-01-20T09:45:00Z"
+  },
+  {
+    "Id": 7,
+    "authorId": "7",
+    "content": "Morning workout complete! 💪 Started the day with a 5-mile run along the beach. There's something magical about exercising outdoors - fresh air, vitamin D, and natural scenery beat any gym. What's your favorite way to stay active?",
+    "imageUrl": "https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
+    "likes": ["2", "5"],
+    "commentCount": 7,
+    "createdAt": "2024-01-20T08:00:00Z"
+  },
+  {
+    "Id": 8,
+    "authorId": "2",
+    "content": "Behind-the-scenes from today's photoshoot! 📸 Love capturing the candid moments between poses - sometimes the unplanned shots turn out to be the most authentic and beautiful. Photography teaches you to see beauty in unexpected places.",
+    "imageUrl": "https://images.unsplash.com/photo-1502920917128-1aa500764cbd?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
+    "likes": ["1", "3", "4", "5"],
+    "commentCount": 11,
+    "createdAt": "2024-01-19T19:20:00Z"
+  },
+  {
+    "Id": 9,
+    "authorId": "1",
+    "content": "Debugging late into the night, but finally cracked this challenging algorithm! 🧠 Sometimes the solution comes when you step away and return with fresh eyes. The programming journey is full of these eureka moments. Time for some sleep!",
+    "imageUrl": "",
+    "likes": ["2", "3", "4"],
+    "commentCount": 5,
+    "createdAt": "2024-01-19T23:45:00Z"
+  },
+  {
+    "Id": 10,
+    "authorId": "3",
+    "content": "Sunset yoga session by the rice terraces! 🧘‍♂️ Bali continues to amaze me with its natural beauty and peaceful energy. This is why I love the nomadic lifestyle - experiencing different cultures and finding inspiration everywhere I go.",
+    "imageUrl": "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
+    "likes": ["1", "2", "4", "5"],
+    "commentCount": 13,
+    "createdAt": "2024-01-19T17:30:00Z"
+  }
+]

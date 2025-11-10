@@ -1,0 +1,42 @@
+[
+  {
+    "Id": 1,
+    "postId": "1",
+    "authorId": "1",
+    "content": "Absolutely stunning photo! The colors are incredible.",
+    "likes": ["2", "3"],
+    "createdAt": "2024-01-20T19:00:00Z"
+  },
+  {
+    "Id": 2,
+    "postId": "1",
+    "authorId": "3",
+    "content": "This makes me miss home. Beautiful capture!",
+    "likes": ["1", "2"],
+    "createdAt": "2024-01-20T19:15:00Z"
+  },
+  {
+    "Id": 3,
+    "postId": "2",
+    "authorId": "2",
+    "content": "Congrats on the breakthrough! Those debugging sessions can be brutal.",
+    "likes": ["1"],
+    "createdAt": "2024-01-20T17:00:00Z"
+  },
+  {
+    "Id": 4,
+    "postId": "3",
+    "authorId": "1",
+    "content": "Tokyo would be amazing! The tech scene there is incredible.",
+    "likes": ["3", "4"],
+    "createdAt": "2024-01-20T15:00:00Z"
+  },
+  {
+    "Id": 5,
+    "postId": "4",
+    "authorId": "1",
+    "content": "Love the clean design! The color palette is perfect.",
+    "likes": ["4"],
+    "createdAt": "2024-01-20T13:00:00Z"
+  }
+]
