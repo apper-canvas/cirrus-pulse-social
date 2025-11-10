@@ -457,5 +457,10 @@ const checkSaveStatus = async (postId, userId) => {
   }
 }
 
+// Add save/unsave methods to the main service object
+postService.savePost = savePost;
+postService.unsavePost = unsavePost;
+postService.checkSaveStatus = checkSaveStatus;
+
 // Export the save/unsave functions
 export { savePost, unsavePost, checkSaveStatus };
