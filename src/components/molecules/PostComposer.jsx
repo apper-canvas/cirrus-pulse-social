@@ -1,18 +1,18 @@
-import { useState } from "react"
-import { toast } from "react-toastify"
-import { cn } from "@/utils/cn"
-import ApperIcon from "@/components/ApperIcon"
-import Avatar from "@/components/atoms/Avatar"
-import Button from "@/components/atoms/Button"
-import Textarea from "@/components/atoms/Textarea"
+import React, { useEffect, useState } from "react";
+import { toast } from "react-toastify";
+import ApperIcon from "@/components/ApperIcon";
+import Textarea from "@/components/atoms/Textarea";
+import Button from "@/components/atoms/Button";
+import Avatar from "@/components/atoms/Avatar";
+import { cn } from "@/utils/cn";
 
 const PostComposer = ({ onCreatePost, className }) => {
   const [content, setContent] = useState("")
   const [imageFile, setImageFile] = useState(null)
   const [imagePreview, setImagePreview] = useState("")
-  const [isExpanded, setIsExpanded] = useState(false)
+const [isExpanded, setIsExpanded] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
-
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false)
   const handleImageUpload = (e) => {
     const file = e.target.files?.[0]
     if (file) {
@@ -35,7 +35,7 @@ const PostComposer = ({ onCreatePost, className }) => {
     setImagePreview("")
   }
 
-  const handleSubmit = async (e) => {
+const handleSubmit = async (e) => {
     e.preventDefault()
     if (!content.trim() && !imageFile) {
       toast.error("Please add some content or an image")
@@ -69,6 +69,7 @@ const PostComposer = ({ onCreatePost, className }) => {
       setImageFile(null)
       setImagePreview("")
       setIsExpanded(false)
+      setShowEmojiPicker(false)
       
       toast.success("Post created successfully!")
     } catch (error) {
@@ -76,6 +77,32 @@ const PostComposer = ({ onCreatePost, className }) => {
     } finally {
       setIsSubmitting(false)
     }
+  }
+
+  const handleEmojiSelect = (emoji) => {
+    setContent(prev => prev + ` ${emoji}`)
+    setShowEmojiPicker(false)
+    if (!isExpanded) {
+      setIsExpanded(true)
+    }
+  }
+
+  const handleClickOutside = (e) => {
+    if (showEmojiPicker && !e.target.closest('.emoji-picker-container')) {
+      setShowEmojiPicker(false)
+    }
+  }
+
+  // Add click outside listener
+  React.useEffect(() => {
+    if (showEmojiPicker) {
+      document.addEventListener('click', handleClickOutside)
+      return () => document.removeEventListener('click', handleClickOutside)
+    }
+  }, [showEmojiPicker])
+
+  const toggleEmojiPicker = () => {
+    setShowEmojiPicker(!showEmojiPicker)
   }
 
   return (
@@ -136,15 +163,61 @@ const PostComposer = ({ onCreatePost, className }) => {
                 />
               </label>
               
-              <button
-                type="button"
-                className="flex items-center space-x-2 px-3 py-2 text-sm text-gray-600 hover:text-secondary hover:bg-secondary/5 rounded-lg transition-all duration-150"
-              >
-                <ApperIcon name="Smile" className="h-4 w-4" />
-                <span>Feeling</span>
-              </button>
-            </div>
+<div className="relative emoji-picker-container">
+                <button
+                  type="button"
+                  onClick={toggleEmojiPicker}
+                  className={cn(
+                    "flex items-center space-x-2 px-3 py-2 text-sm text-gray-600 hover:text-secondary hover:bg-secondary/5 rounded-lg transition-all duration-150",
+                    showEmojiPicker && "text-secondary bg-secondary/5"
+                  )}
+                >
+                  <ApperIcon name="Smile" className="h-4 w-4" />
+                  <span>Feeling</span>
+                </button>
 
+                {showEmojiPicker && (
+                  <div className="absolute top-full left-0 mt-2 bg-surface border border-gray-200 rounded-xl shadow-lg p-3 z-50 min-w-[280px]">
+                    <div className="text-xs text-gray-500 mb-2 font-medium">How are you feeling?</div>
+                    <div className="grid grid-cols-7 gap-2">
+                      {[
+                        { emoji: '😊', label: 'Happy' },
+                        { emoji: '😍', label: 'Loved' },
+                        { emoji: '😎', label: 'Cool' },
+                        { emoji: '😢', label: 'Sad' },
+                        { emoji: '😡', label: 'Angry' },
+                        { emoji: '😴', label: 'Sleepy' },
+                        { emoji: '🤔', label: 'Thinking' },
+                        { emoji: '😂', label: 'Laughing' },
+                        { emoji: '🥳', label: 'Celebrating' },
+                        { emoji: '😇', label: 'Blessed' },
+                        { emoji: '🤗', label: 'Grateful' },
+                        { emoji: '😋', label: 'Yummy' },
+                        { emoji: '🤩', label: 'Excited' },
+                        { emoji: '😌', label: 'Peaceful' },
+                        { emoji: '🥰', label: 'Loved' },
+                        { emoji: '😤', label: 'Frustrated' },
+                        { emoji: '🤯', label: 'Mind Blown' },
+                        { emoji: '😱', label: 'Shocked' },
+                        { emoji: '🙄', label: 'Rolling Eyes' },
+                        { emoji: '😏', label: 'Smirking' },
+                        { emoji: '🤨', label: 'Suspicious' }
+                      ].map(({ emoji, label }) => (
+                        <button
+                          key={emoji}
+                          type="button"
+                          onClick={() => handleEmojiSelect(emoji)}
+                          className="w-8 h-8 flex items-center justify-center text-lg hover:bg-secondary/10 rounded-lg transition-colors duration-150"
+                          title={label}
+                        >
+                          {emoji}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+)}
+              </div>
+            </div>
             <div className="flex items-center space-x-2">
               <Button
                 type="button"
