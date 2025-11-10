@@ -1,5 +1,4 @@
-import { getApperClient } from "@/services/apperClient"
-
+import { getApperClient } from "@/services/apperClient";
 export const postService = {
   async getAll() {
     try {
@@ -9,7 +8,7 @@ export const postService = {
         return []
       }
 
-      const response = await apperClient.fetchRecords('post_c', {
+const response = await apperClient.fetchRecords('post_c', {
         fields: [
           {"field": {"Name": "Name"}},
           {"field": {"Name": "content_c"}},
@@ -18,10 +17,13 @@ export const postService = {
           {"field": {"Name": "likes_c"}},
           {"field": {"Name": "reactions_c"}},
           {"field": {"Name": "CreatedOn"}},
-          {"field": {"Name": "author_id_c"}}
+          {"field": {"Name": "author_id_c"}, "referenceField": {"field": {"Name": "Name"}}},
+          {"field": {"Name": "author_id_c"}, "referenceField": {"field": {"Name": "username_c"}}},
+          {"field": {"Name": "author_id_c"}, "referenceField": {"field": {"Name": "profile_picture_c"}}},
+          {"field": {"Name": "author_id_c"}, "referenceField": {"field": {"Name": "bio_c"}}}
         ],
         orderBy: [{"fieldName": "CreatedOn", "sorttype": "DESC"}],
-        pagingInfo: { limit: 100, offset: 0 }
+        pagingInfo: { limit: 20, offset: 0 }
       })
 
       if (!response.success) {
@@ -44,7 +46,7 @@ export const postService = {
         return null
       }
 
-      const response = await apperClient.getRecordById('post_c', parseInt(id), {
+const response = await apperClient.getRecordById('post_c', parseInt(id), {
         fields: [
           {"field": {"Name": "Name"}},
           {"field": {"Name": "content_c"}},
@@ -53,12 +55,15 @@ export const postService = {
           {"field": {"Name": "likes_c"}},
           {"field": {"Name": "reactions_c"}},
           {"field": {"Name": "CreatedOn"}},
-          {"field": {"Name": "author_id_c"}}
+          {"field": {"Name": "author_id_c"}, "referenceField": {"field": {"Name": "Name"}}},
+          {"field": {"Name": "author_id_c"}, "referenceField": {"field": {"Name": "username_c"}}},
+          {"field": {"Name": "author_id_c"}, "referenceField": {"field": {"Name": "profile_picture_c"}}},
+          {"field": {"Name": "author_id_c"}, "referenceField": {"field": {"Name": "bio_c"}}}
         ]
       })
 
       if (!response.success) {
-        console.error("Failed to fetch post:", response.message)
+        console.error(response.message)
         return null
       }
 
@@ -77,7 +82,7 @@ export const postService = {
         return []
       }
 
-      const response = await apperClient.fetchRecords('post_c', {
+const response = await apperClient.fetchRecords('post_c', {
         fields: [
           {"field": {"Name": "Name"}},
           {"field": {"Name": "content_c"}},
@@ -86,7 +91,10 @@ export const postService = {
           {"field": {"Name": "likes_c"}},
           {"field": {"Name": "reactions_c"}},
           {"field": {"Name": "CreatedOn"}},
-          {"field": {"Name": "author_id_c"}}
+          {"field": {"Name": "author_id_c"}, "referenceField": {"field": {"Name": "Name"}}},
+          {"field": {"Name": "author_id_c"}, "referenceField": {"field": {"Name": "username_c"}}},
+          {"field": {"Name": "author_id_c"}, "referenceField": {"field": {"Name": "profile_picture_c"}}},
+          {"field": {"Name": "author_id_c"}, "referenceField": {"field": {"Name": "bio_c"}}}
         ],
         where: [{"FieldName": "author_id_c", "Operator": "EqualTo", "Values": [parseInt(userId)]}],
         orderBy: [{"fieldName": "CreatedOn", "sorttype": "DESC"}],
@@ -114,7 +122,7 @@ export const postService = {
       }
 
       // For now, return all posts - in production, you'd filter by friends
-      const response = await apperClient.fetchRecords('post_c', {
+const response = await apperClient.fetchRecords('post_c', {
         fields: [
           {"field": {"Name": "Name"}},
           {"field": {"Name": "content_c"}},
@@ -123,14 +131,17 @@ export const postService = {
           {"field": {"Name": "likes_c"}},
           {"field": {"Name": "reactions_c"}},
           {"field": {"Name": "CreatedOn"}},
-          {"field": {"Name": "author_id_c"}}
+          {"field": {"Name": "author_id_c"}, "referenceField": {"field": {"Name": "Name"}}},
+          {"field": {"Name": "author_id_c"}, "referenceField": {"field": {"Name": "username_c"}}},
+          {"field": {"Name": "author_id_c"}, "referenceField": {"field": {"Name": "profile_picture_c"}}},
+          {"field": {"Name": "author_id_c"}, "referenceField": {"field": {"Name": "bio_c"}}}
         ],
         orderBy: [{"fieldName": "CreatedOn", "sorttype": "DESC"}],
         pagingInfo: { limit: 50, offset: 0 }
       })
 
       if (!response.success) {
-        console.error("Failed to fetch feed posts:", response.message)
+        console.error(response.message)
         return []
       }
 
@@ -149,10 +160,10 @@ export const postService = {
         return null
       }
 
-      const params = {
+const params = {
         records: [{
+          content_c: postData.content_c,
           Name: postData.Name || "Post",
-          content_c: postData.content_c || postData.content,
           image_url_c: postData.image_url_c || postData.imageUrl || "",
           comment_count_c: 0,
           likes_c: "[]", // Empty array as string

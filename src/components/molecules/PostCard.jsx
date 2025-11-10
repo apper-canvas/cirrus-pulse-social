@@ -8,11 +8,11 @@ import Button from "@/components/atoms/Button";
 import Avatar from "@/components/atoms/Avatar";
 import { cn } from "@/utils/cn";
 
-const PostCard = ({ post, onLike, onComment, className }) => {
-const { user } = useSelector((state) => state.user)
+const PostCard = ({ post, onUpdate, className }) => {
+  const { user } = useSelector((state) => state.user)
   const currentUserId = user?.userId || user?.Id || "1"
   
-  // Parse likes from database format
+  // State for post interactions
   const parseLikes = (likesData) => {
     try {
       return JSON.parse(likesData || "[]")
@@ -160,23 +160,28 @@ const newReply = await commentService.replyToComment(parentCommentId, {
     }))
   }
 
-  const renderComment = (comment, isReply = false) => {
+const renderComment = (comment, isReply = false) => {
     const likes = commentLikes[comment.Id] || { isLiked: false, count: 0 }
     const replies = comments.filter(c => c.parentId === comment.Id)
     const showReplyForm = replyForms[comment.Id]
     const replyText = replyTexts[comment.Id] || ""
 
     return (
-      <div key={comment.Id} className={cn("flex space-x-3", isReply && "ml-8 mt-2")}>
-        <Avatar size="sm" fallback={comment.author?.username?.[0]?.toUpperCase() || "U"} />
-        <div className="flex-1">
-<div className="bg-gray-50 rounded-lg px-3 py-2">
-            <div className="flex items-center space-x-2 mb-1">
-              <span className="font-semibold text-sm text-gray-900">
-                {comment.author?.username_c || comment.author?.Name || 'Unknown User'}
+      <div key={comment.Id} className={cn("flex space-x-3", isReply && "ml-12")}>
+        <div className="flex-shrink-0">
+        <Avatar 
+          size="sm" 
+          src={comment.author_id_c?.profile_picture_c}
+          fallback={comment.author_id_c?.Name?.[0]?.toUpperCase() || comment.author_id_c?.username_c?.[0]?.toUpperCase() || "U"}
+        />
+        </div>
+        <div className="flex-1 min-w-0">
+<div className="bg-gray-100 rounded-lg px-3 py-2">
+            <div className="flex items-center space-x-2">
+              <span className="font-medium text-sm text-gray-900">
+{comment.author_id_c?.Name || comment.author_id_c?.username_c || 'Unknown User'}
               </span>
               <span className="text-xs text-gray-500">
-                {formatDistanceToNow(new Date(comment.CreatedOn || comment.createdAt), { addSuffix: true })}
               </span>
             </div>
             <p className="text-sm text-gray-800">{comment.content_c || comment.content}</p>
@@ -256,26 +261,26 @@ const newReply = await commentService.replyToComment(parentCommentId, {
     )}>
       {/* Post Header */}
       <div className="p-4 pb-3">
-        <div className="flex items-center space-x-3">
+<div className="flex items-center space-x-3">
           <Avatar
-src={post.author_id_c?.profile_picture_c || ""}
-            alt={post.author?.username}
+            src={post.author_id_c?.profile_picture_c || ""}
+            alt={post.author_id_c?.username_c || post.author_id_c?.Name}
             size="md"
             online={true}
           />
           <div className="flex-1">
-<div className="flex items-center space-x-2">
-               <h3 className="font-semibold text-gray-900">{post.author_id_c?.Name || 'Unknown User'}</h3>
-               <span className="text-gray-400">•</span>
-               <span className="text-gray-500 text-sm">
+            <div className="flex items-center space-x-2">
+<h3 className="font-semibold text-gray-900">{post.author_id_c?.Name || 'Unknown User'}</h3>
+              <span className="text-gray-400">•</span>
+              <span className="text-sm text-gray-500">
                  {formatDistanceToNow(new Date(post.CreatedOn || post.createdAt), { addSuffix: true })}
               </span>
             </div>
 {post.author_id_c?.bio_c && (
-               <p className="text-xs text-gray-500 mt-1">{post.author_id_c.bio_c}</p>
+              <p className="text-xs text-gray-500 mt-1">{post.author_id_c.bio_c}</p>
             )}
           </div>
-          <button className="p-2 hover:bg-gray-100 rounded-lg transition-colors duration-150">
+        </div>
             <ApperIcon name="MoreHorizontal" className="h-4 w-4 text-gray-400" />
           </button>
         </div>

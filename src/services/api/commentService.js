@@ -1,12 +1,12 @@
-import { getApperClient } from "@/services/apperClient"
+import { getApperClient } from "@/services/apperClient";
 
 export const commentService = {
   async getAll() {
     try {
-      const apperClient = getApperClient()
+      const apperClient = getApperClient();
       if (!apperClient) {
-        console.error("ApperClient not available")
-        return []
+        console.error("ApperClient not available");
+        return [];
       }
 
       const response = await apperClient.fetchRecords('comment_c', {
@@ -14,23 +14,26 @@ export const commentService = {
           {"field": {"Name": "Name"}},
           {"field": {"Name": "content_c"}},
           {"field": {"Name": "likes_c"}},
-          {"field": {"Name": "CreatedOn"}},
-          {"field": {"Name": "author_id_c"}},
+          {"field": {"Name": "author_id_c"}, "referenceField": {"field": {"Name": "Name"}}},
+          {"field": {"Name": "author_id_c"}, "referenceField": {"field": {"Name": "username_c"}}},
+          {"field": {"Name": "author_id_c"}, "referenceField": {"field": {"Name": "profile_picture_c"}}},
           {"field": {"Name": "post_id_c"}},
-          {"field": {"Name": "parent_id_c"}}
+          {"field": {"Name": "parent_id_c"}},
+          {"field": {"Name": "CreatedOn"}}
         ],
+        orderBy: [{"fieldName": "CreatedOn", "sorttype": "DESC"}],
         pagingInfo: { limit: 100, offset: 0 }
-      })
+      });
 
       if (!response.success) {
-        console.error("Failed to fetch comments:", response.message)
-        return []
+        console.error("Failed to fetch all comments:", response.message);
+        return [];
       }
 
-      return response.data || []
+      return response.data || [];
     } catch (error) {
-      console.error("Error fetching comments:", error?.response?.data?.message || error)
-      return []
+      console.error("Error fetching all comments:", error?.response?.data?.message || error);
+      return [];
     }
   },
 
@@ -66,40 +69,6 @@ export const commentService = {
     }
   },
 
-  async getByPostId(postId) {
-    try {
-      const apperClient = getApperClient()
-      if (!apperClient) {
-        console.error("ApperClient not available")
-        return []
-      }
-
-      const response = await apperClient.fetchRecords('comment_c', {
-        fields: [
-          {"field": {"Name": "Name"}},
-          {"field": {"Name": "content_c"}},
-          {"field": {"Name": "likes_c"}},
-          {"field": {"Name": "CreatedOn"}},
-          {"field": {"Name": "author_id_c"}},
-          {"field": {"Name": "post_id_c"}},
-          {"field": {"Name": "parent_id_c"}}
-        ],
-        where: [{"FieldName": "post_id_c", "Operator": "EqualTo", "Values": [parseInt(postId)]}],
-        orderBy: [{"fieldName": "CreatedOn", "sorttype": "ASC"}],
-        pagingInfo: { limit: 100, offset: 0 }
-      })
-
-      if (!response.success) {
-        console.error("Failed to fetch post comments:", response.message)
-        return []
-      }
-
-      return response.data || []
-    } catch (error) {
-      console.error(`Error fetching comments for post ${postId}:`, error?.response?.data?.message || error)
-      return []
-    }
-  },
 
   async create(commentData) {
     try {
