@@ -25,7 +25,7 @@ const { user } = useSelector((state) => state.user)
   const [isLiked, setIsLiked] = useState(postLikes.includes(currentUserId.toString()))
   const [showComments, setShowComments] = useState(false)
   const [commentText, setCommentText] = useState("")
-  const [likesCount, setLikesCount] = useState(post.likes.length)
+const [likesCount, setLikesCount] = useState((post.likes || []).length)
   const [comments, setComments] = useState([])
   const [commentLikes, setCommentLikes] = useState({})
   const [replyForms, setReplyForms] = useState({})
@@ -65,9 +65,9 @@ useEffect(() => {
       // Initialize comment likes state
       const likesState = {}
       postComments.forEach(comment => {
-        likesState[comment.Id] = {
-          isLiked: comment.likes.includes("1"),
-          count: comment.likes.length
+likesState[comment.Id] = {
+          isLiked: (comment.likes || []).includes("1"),
+          count: (comment.likes || []).length
         }
       })
       setCommentLikes(likesState)
