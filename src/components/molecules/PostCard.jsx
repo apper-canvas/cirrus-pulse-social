@@ -70,9 +70,10 @@ useEffect(() => {
       // Initialize comment likes state
       const likesState = {}
       postComments.forEach(comment => {
-likesState[comment.Id] = {
-          isLiked: (comment.likes || []).includes("1"),
-          count: (comment.likes || []).length
+// Initialize like state for each comment (will be updated after fetching likes)
+        likesState[comment.Id] = {
+          isLiked: false,
+          count: 0
         }
       })
       setCommentLikes(likesState)
@@ -93,7 +94,7 @@ try {
       })
       
       setComments(prev => [...prev, newComment])
-      setCommentLikes(prev => ({
+setCommentLikes(prev => ({
         ...prev,
         [newComment.Id]: { isLiked: false, count: 0 }
       }))
@@ -108,25 +109,21 @@ try {
     }
   }
 
-  const handleCommentLike = async (commentId) => {
+const handleCommentLike = async (commentId) => {
     try {
-const result = await commentService.likeComment(commentId, currentUserId)
-      setCommentLikes(prev => ({
-        ...prev,
-        [commentId]: {
-          isLiked: result.isLiked,
-          count: result.likesCount
-        }
-      }))
+      const result = await commentService.likeComment(commentId, currentUserId)
       
-      // Update the comment in comments array
-      setComments(prev => prev.map(comment => 
-        comment.Id === parseInt(commentId) 
-          ? { ...comment, likes: result.likes }
-          : comment
-      ))
-      
-      toast.success(result.isLiked ? "Comment liked!" : "Comment unliked!", { autoClose: 800 })
+      if (result) {
+        setCommentLikes(prev => ({
+          ...prev,
+          [commentId]: {
+            isLiked: result.isLiked,
+            count: result.likesCount
+          }
+        }))
+        
+        toast.success(result.isLiked ? "Comment liked!" : "Comment unliked!", { autoClose: 800 })
+      }
     } catch (error) {
       toast.error("Failed to like comment")
     }
@@ -144,10 +141,9 @@ const newReply = await commentService.replyToComment(parentCommentId, {
       
       setComments(prev => [...prev, newReply])
       setCommentLikes(prev => ({
-        ...prev,
+...prev,
         [newReply.Id]: { isLiked: false, count: 0 }
       }))
-      
       // Close reply form and clear text
       setReplyForms(prev => ({ ...prev, [parentCommentId]: false }))
       setReplyTexts(prev => ({ ...prev, [parentCommentId]: "" }))
@@ -166,7 +162,7 @@ const newReply = await commentService.replyToComment(parentCommentId, {
   }
 
 const renderComment = (comment, isReply = false) => {
-    const likes = commentLikes[comment.Id] || { isLiked: false, count: 0 }
+const likes = commentLikes[comment.Id] || { isLiked: false, count: 0 }
     const replies = comments.filter(c => c.parentId === comment.Id)
     const showReplyForm = replyForms[comment.Id]
     const replyText = replyTexts[comment.Id] || ""
@@ -197,7 +193,7 @@ const renderComment = (comment, isReply = false) => {
               onClick={() => handleCommentLike(comment.Id)}
               className={cn(
                 "flex items-center space-x-1 text-xs font-medium transition-colors",
-                likes.isLiked 
+likes.isLiked 
                   ? "text-primary" 
                   : "text-gray-500 hover:text-primary"
               )}

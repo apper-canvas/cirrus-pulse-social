@@ -1,4 +1,5 @@
 import { getApperClient } from "@/services/apperClient";
+import { likeService } from "./likeService";
 
 export const commentService = {
   async getAll() {
@@ -13,7 +14,6 @@ export const commentService = {
         fields: [
           {"field": {"Name": "Name"}},
           {"field": {"Name": "content_c"}},
-          {"field": {"Name": "likes_c"}},
           {"field": {"Name": "author_id_c"}, "referenceField": {"field": {"Name": "Name"}}},
           {"field": {"Name": "author_id_c"}, "referenceField": {"field": {"Name": "username_c"}}},
           {"field": {"Name": "author_id_c"}, "referenceField": {"field": {"Name": "profile_picture_c"}}},
@@ -49,7 +49,6 @@ export const commentService = {
         fields: [
           {"field": {"Name": "Name"}},
           {"field": {"Name": "content_c"}},
-          {"field": {"Name": "likes_c"}},
           {"field": {"Name": "CreatedOn"}},
           {"field": {"Name": "author_id_c"}},
           {"field": {"Name": "post_id_c"}},
@@ -82,7 +81,6 @@ export const commentService = {
         records: [{
           Name: "Comment",
           content_c: commentData.content_c || commentData.content,
-          likes_c: "[]", // Empty array as string
           author_id_c: parseInt(commentData.author_id_c || commentData.authorId),
           post_id_c: parseInt(commentData.post_id_c || commentData.postId),
           parent_id_c: commentData.parent_id_c ? parseInt(commentData.parent_id_c) : null
@@ -117,46 +115,43 @@ export const commentService = {
     }
   },
 
-  async likeComment(commentId, userId) {
+async likeComment(commentId, userId) {
     try {
-      // Get current comment
-      const comment = await this.getById(commentId)
-      if (!comment) {
-        console.error("Comment not found")
-        return null
-      }
-
-      // Parse current likes
-      let likes = []
-      try {
-        likes = JSON.parse(comment.likes_c || "[]")
-      } catch (e) {
-        likes = []
-      }
-
-      const userIdStr = userId.toString()
-      const isLiked = likes.includes(userIdStr)
-
-      if (isLiked) {
-        likes = likes.filter(id => id !== userIdStr)
+      // Check if user has already liked this comment
+      const existingLike = await likeService.getUserLikeForComment(commentId, userId);
+      
+      if (existingLike) {
+        // Unlike: delete the existing like record
+        const success = await likeService.deleteLike(existingLike.Id);
+        
+        if (success) {
+          // Get updated like count
+          const likes = await likeService.getLikesByComment(commentId);
+          return {
+            isLiked: false,
+            likesCount: likes.length,
+            commentId: parseInt(commentId)
+          };
+        }
+        return null;
       } else {
-        likes.push(userIdStr)
-      }
-
-      // Update comment
-      const updatedComment = await this.update(commentId, {
-        likes_c: JSON.stringify(likes)
-      })
-
-      return {
-        ...updatedComment,
-        isLiked: !isLiked,
-        likesCount: likes.length,
-        likes: likes
+        // Like: create a new like record
+        const newLike = await likeService.createLike(commentId, userId);
+        
+        if (newLike) {
+          // Get updated like count
+          const likes = await likeService.getLikesByComment(commentId);
+          return {
+            isLiked: true,
+            likesCount: likes.length,
+            commentId: parseInt(commentId)
+          };
+        }
+        return null;
       }
     } catch (error) {
-      console.error("Error liking comment:", error?.response?.data?.message || error)
-      return null
+      console.error("Error liking comment:", error?.response?.data?.message || error);
+      return null;
     }
   },
 
@@ -191,7 +186,6 @@ export const commentService = {
       // Only include updateable fields
       if (updates.Name !== undefined) updateData.Name = updates.Name
       if (updates.content_c !== undefined) updateData.content_c = updates.content_c
-      if (updates.likes_c !== undefined) updateData.likes_c = updates.likes_c
 
       const params = { records: [updateData] }
       const response = await apperClient.updateRecord('comment_c', params)
@@ -258,35 +252,6 @@ export const commentService = {
     }
   },
 
-  async unlikeComment(commentId, userId) {
-    try {
-      // Get current comment
-      const comment = await this.getById(commentId)
-      if (!comment) {
-        console.error("Comment not found")
-        return null
-      }
-
-      // Parse current likes
-      let likes = []
-      try {
-        likes = JSON.parse(comment.likes_c || "[]")
-      } catch (e) {
-        likes = []
-      }
-
-      const userIdStr = userId.toString()
-      likes = likes.filter(id => id !== userIdStr)
-
-      // Update comment
-      return await this.update(commentId, {
-        likes_c: JSON.stringify(likes)
-      })
-    } catch (error) {
-      console.error("Error unliking comment:", error?.response?.data?.message || error)
-      return null
-    }
-},
 
   async getByPostId(postId) {
     try {
@@ -300,7 +265,6 @@ export const commentService = {
         fields: [
           {"field": {"Name": "Name"}},
           {"field": {"Name": "content_c"}},
-          {"field": {"Name": "likes_c"}},
           {"field": {"Name": "author_id_c"}, "referenceField": {"field": {"Name": "Name"}}},
           {"field": {"Name": "author_id_c"}, "referenceField": {"field": {"Name": "username_c"}}},
           {"field": {"Name": "author_id_c"}, "referenceField": {"field": {"Name": "profile_picture_c"}}},
