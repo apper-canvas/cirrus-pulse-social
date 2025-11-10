@@ -41,13 +41,14 @@ export const commentService = {
     return enhancedComments.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt))
   },
 
-  async create(commentData) {
+async create(commentData) {
     await delay(400)
     const maxId = Math.max(...comments.map(c => c.Id))
     const newComment = {
       ...commentData,
       Id: maxId + 1,
       likes: [],
+      parentId: commentData.parentId || null,
       createdAt: new Date().toISOString()
     }
     
@@ -63,6 +64,59 @@ export const commentService = {
     const author = users.find(u => u.Id === parseInt(newComment.authorId))
     return {
       ...newComment,
+      author: author ? {
+        Id: author.Id,
+        username: author.username,
+        profilePicture: author.profilePicture
+      } : null
+    }
+  },
+
+  async likeComment(commentId, userId) {
+    await delay(200)
+    const comment = comments.find(c => c.Id === parseInt(commentId))
+    if (!comment) {
+      throw new Error("Comment not found")
+    }
+
+    const userIdStr = userId.toString()
+    const isLiked = comment.likes.includes(userIdStr)
+    
+    if (isLiked) {
+      comment.likes = comment.likes.filter(id => id !== userIdStr)
+    } else {
+      comment.likes.push(userIdStr)
+    }
+
+    return {
+      ...comment,
+      isLiked: !isLiked,
+      likesCount: comment.likes.length
+    }
+  },
+
+  async replyToComment(parentCommentId, replyData) {
+    await delay(350)
+    const parentComment = comments.find(c => c.Id === parseInt(parentCommentId))
+    if (!parentComment) {
+      throw new Error("Parent comment not found")
+    }
+
+    const maxId = Math.max(...comments.map(c => c.Id))
+    const newReply = {
+      ...replyData,
+      Id: maxId + 1,
+      parentId: parseInt(parentCommentId),
+      likes: [],
+      createdAt: new Date().toISOString()
+    }
+
+    comments.push(newReply)
+
+    // Enhance with author information
+    const author = users.find(u => u.Id === parseInt(newReply.authorId))
+    return {
+      ...newReply,
       author: author ? {
         Id: author.Id,
         username: author.username,

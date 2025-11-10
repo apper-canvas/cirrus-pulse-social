@@ -1,17 +1,21 @@
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { formatDistanceToNow } from "date-fns"
 import { cn } from "@/utils/cn"
 import { toast } from "react-toastify"
 import ApperIcon from "@/components/ApperIcon"
 import Avatar from "@/components/atoms/Avatar"
 import Button from "@/components/atoms/Button"
+import { commentService } from "@/services/api/commentService"
 
 const PostCard = ({ post, onLike, onComment, className }) => {
   const [isLiked, setIsLiked] = useState(post.likes.includes("1")) // Current user ID is "1"
   const [showComments, setShowComments] = useState(false)
   const [commentText, setCommentText] = useState("")
   const [likesCount, setLikesCount] = useState(post.likes.length)
-
+  const [comments, setComments] = useState([])
+  const [commentLikes, setCommentLikes] = useState({})
+  const [replyForms, setReplyForms] = useState({})
+  const [replyTexts, setReplyTexts] = useState({})
   const handleLike = async () => {
     try {
       const newLikedState = !isLiked
@@ -33,19 +37,202 @@ const PostCard = ({ post, onLike, onComment, className }) => {
     }
   }
 
+useEffect(() => {
+    if (showComments) {
+      fetchComments()
+    }
+  }, [showComments, post.Id])
+
+  const fetchComments = async () => {
+    try {
+      const postComments = await commentService.getByPostId(post.Id)
+      setComments(postComments)
+      
+      // Initialize comment likes state
+      const likesState = {}
+      postComments.forEach(comment => {
+        likesState[comment.Id] = {
+          isLiked: comment.likes.includes("1"),
+          count: comment.likes.length
+        }
+      })
+      setCommentLikes(likesState)
+    } catch (error) {
+      toast.error("Failed to load comments")
+    }
+  }
+
   const handleComment = async (e) => {
     e.preventDefault()
     if (!commentText.trim()) return
 
     try {
+      const newComment = await commentService.create({
+        postId: post.Id,
+        authorId: "1",
+        content: commentText.trim()
+      })
+      
+      setComments(prev => [...prev, newComment])
+      setCommentLikes(prev => ({
+        ...prev,
+        [newComment.Id]: { isLiked: false, count: 0 }
+      }))
+      setCommentText("")
+      toast.success("Comment added!", { autoClose: 1000 })
+      
       if (onComment) {
         await onComment(post.Id, commentText.trim())
       }
-      setCommentText("")
-      toast.success("Comment added!", { autoClose: 1000 })
     } catch (error) {
       toast.error("Failed to add comment")
     }
+  }
+
+  const handleCommentLike = async (commentId) => {
+    try {
+      const result = await commentService.likeComment(commentId, "1")
+      setCommentLikes(prev => ({
+        ...prev,
+        [commentId]: {
+          isLiked: result.isLiked,
+          count: result.likesCount
+        }
+      }))
+      
+      // Update the comment in comments array
+      setComments(prev => prev.map(comment => 
+        comment.Id === parseInt(commentId) 
+          ? { ...comment, likes: result.likes }
+          : comment
+      ))
+      
+      toast.success(result.isLiked ? "Comment liked!" : "Comment unliked!", { autoClose: 800 })
+    } catch (error) {
+      toast.error("Failed to like comment")
+    }
+  }
+
+  const handleReply = async (parentCommentId, replyText) => {
+    if (!replyText.trim()) return
+
+    try {
+      const newReply = await commentService.replyToComment(parentCommentId, {
+        postId: post.Id,
+        authorId: "1",
+        content: replyText.trim()
+      })
+      
+      setComments(prev => [...prev, newReply])
+      setCommentLikes(prev => ({
+        ...prev,
+        [newReply.Id]: { isLiked: false, count: 0 }
+      }))
+      
+      // Close reply form and clear text
+      setReplyForms(prev => ({ ...prev, [parentCommentId]: false }))
+      setReplyTexts(prev => ({ ...prev, [parentCommentId]: "" }))
+      
+      toast.success("Reply added!", { autoClose: 1000 })
+    } catch (error) {
+      toast.error("Failed to add reply")
+    }
+  }
+
+  const toggleReplyForm = (commentId) => {
+    setReplyForms(prev => ({
+      ...prev,
+      [commentId]: !prev[commentId]
+    }))
+  }
+
+  const renderComment = (comment, isReply = false) => {
+    const likes = commentLikes[comment.Id] || { isLiked: false, count: 0 }
+    const replies = comments.filter(c => c.parentId === comment.Id)
+    const showReplyForm = replyForms[comment.Id]
+    const replyText = replyTexts[comment.Id] || ""
+
+    return (
+      <div key={comment.Id} className={cn("flex space-x-3", isReply && "ml-8 mt-2")}>
+        <Avatar size="sm" fallback={comment.author?.username?.[0]?.toUpperCase() || "U"} />
+        <div className="flex-1">
+          <div className="bg-gray-50 rounded-lg px-3 py-2">
+            <div className="flex items-center space-x-2 mb-1">
+              <span className="font-semibold text-sm text-gray-900">
+                {comment.author?.username || 'Unknown User'}
+              </span>
+              <span className="text-xs text-gray-500">
+                {formatDistanceToNow(new Date(comment.createdAt), { addSuffix: true })}
+              </span>
+            </div>
+            <p className="text-sm text-gray-800">{comment.content}</p>
+          </div>
+          
+          <div className="flex items-center space-x-4 mt-2">
+            <button 
+              onClick={() => handleCommentLike(comment.Id)}
+              className={cn(
+                "flex items-center space-x-1 text-xs font-medium transition-colors",
+                likes.isLiked 
+                  ? "text-primary" 
+                  : "text-gray-500 hover:text-primary"
+              )}
+            >
+              <ApperIcon 
+                name="Heart" 
+                size={12} 
+                className={cn(likes.isLiked && "fill-current heart-pop")} 
+              />
+              <span>{likes.count > 0 ? likes.count : "Like"}</span>
+            </button>
+            
+            {!isReply && (
+              <button 
+                onClick={() => toggleReplyForm(comment.Id)}
+                className="text-xs text-gray-500 hover:text-secondary font-medium transition-colors"
+              >
+                Reply
+              </button>
+            )}
+          </div>
+
+          {showReplyForm && (
+            <div className="mt-3 ml-4">
+              <div className="flex space-x-2">
+                <Avatar size="sm" fallback="Y" />
+                <div className="flex-1 flex space-x-2">
+                  <input
+                    type="text"
+                    value={replyText}
+                    onChange={(e) => setReplyTexts(prev => ({ ...prev, [comment.Id]: e.target.value }))}
+                    placeholder="Write a reply..."
+                    className="flex-1 px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-secondary focus:border-transparent"
+                    onKeyPress={(e) => {
+                      if (e.key === 'Enter') {
+                        handleReply(comment.Id, replyText)
+                      }
+                    }}
+                  />
+                  <Button
+                    size="sm"
+                    disabled={!replyText.trim()}
+                    onClick={() => handleReply(comment.Id, replyText)}
+                  >
+                    Reply
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {replies.length > 0 && (
+            <div className="mt-3 space-y-2">
+              {replies.map(reply => renderComment(reply, true))}
+            </div>
+          )}
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -165,23 +352,10 @@ const PostCard = ({ post, onLike, onComment, className }) => {
           </form>
 
           {/* Sample Comments */}
-          <div className="mt-4 space-y-3">
-            <div className="flex space-x-3">
-              <Avatar size="sm" fallback="J" />
-              <div className="flex-1">
-                <div className="bg-gray-50 rounded-lg px-3 py-2">
-                  <div className="flex items-center space-x-2 mb-1">
-                    <span className="font-semibold text-sm text-gray-900">jane_smith</span>
-                    <span className="text-xs text-gray-500">2h</span>
-                  </div>
-                  <p className="text-sm text-gray-800">Great post! Thanks for sharing.</p>
-                </div>
-                <div className="flex items-center space-x-4 mt-2">
-                  <button className="text-xs text-gray-500 hover:text-primary font-medium">Like</button>
-                  <button className="text-xs text-gray-500 hover:text-secondary font-medium">Reply</button>
-                </div>
-              </div>
-            </div>
+<div className="mt-4 space-y-3">
+            {comments
+              .filter(comment => !comment.parentId)
+              .map(comment => renderComment(comment))}
           </div>
         </div>
       )}
