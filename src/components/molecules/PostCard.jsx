@@ -79,8 +79,8 @@ likesState[comment.Id] = {
     e.preventDefault()
     if (!commentText.trim()) return
 
-    try {
-const newComment = await commentService.create({
+try {
+      const newComment = await commentService.create({
         post_id_c: post.Id,
         author_id_c: currentUserId,
         content_c: commentText.trim()
@@ -92,11 +92,12 @@ const newComment = await commentService.create({
         [newComment.Id]: { isLiked: false, count: 0 }
       }))
       setCommentText("")
-toast.success("Comment added!", { autoClose: 1000 })
+      toast.success("Comment added!", { autoClose: 1000 })
       
       if (onUpdate?.onComment) {
         await onUpdate.onComment(post.Id, commentText.trim())
       }
+    } catch (error) {
       toast.error("Failed to add comment")
     }
   }
