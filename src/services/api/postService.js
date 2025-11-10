@@ -365,3 +365,97 @@ const params = {
     }
   }
 }
+
+// Save post functionality
+const savePost = async (postId, userId) => {
+  try {
+    const { ApperClient } = window.ApperSDK
+    const apperClient = new ApperClient({
+      apperProjectId: import.meta.env.VITE_APPER_PROJECT_ID,
+      apperPublicKey: import.meta.env.VITE_APPER_PUBLIC_KEY
+    })
+
+    const params = {
+      records: [{
+        Name: `Saved Post ${postId}`,
+        post_id_c: parseInt(postId),
+        user_id_c: parseInt(userId)
+      }]
+    }
+
+    const response = await apperClient.createRecord('saved_post_c', params)
+
+    if (!response.success) {
+      console.error("Failed to save post:", response.message)
+      throw new Error(response.message)
+    }
+
+    return response.results?.[0]?.data
+  } catch (error) {
+    console.error("Error saving post:", error?.response?.data?.message || error)
+    throw error
+  }
+}
+
+const unsavePost = async (postId, userId) => {
+  try {
+    const { ApperClient } = window.ApperSDK
+    const apperClient = new ApperClient({
+      apperProjectId: import.meta.env.VITE_APPER_PROJECT_ID,
+      apperPublicKey: import.meta.env.VITE_APPER_PUBLIC_KEY
+    })
+
+    // First find the saved post record
+    const findResponse = await apperClient.fetchRecords('saved_post_c', {
+      fields: [{"field": {"Name": "Id"}}],
+      where: [
+        {"FieldName": "post_id_c", "Operator": "EqualTo", "Values": [parseInt(postId)]},
+        {"FieldName": "user_id_c", "Operator": "EqualTo", "Values": [parseInt(userId)]}
+      ]
+    })
+
+    if (findResponse.success && findResponse.data.length > 0) {
+      const savedPostId = findResponse.data[0].Id
+      const deleteResponse = await apperClient.deleteRecord('saved_post_c', {
+        RecordIds: [savedPostId]
+      })
+
+      if (!deleteResponse.success) {
+        throw new Error(deleteResponse.message)
+      }
+
+      return true
+    }
+
+    return false
+  } catch (error) {
+    console.error("Error unsaving post:", error?.response?.data?.message || error)
+    throw error
+  }
+}
+
+const checkSaveStatus = async (postId, userId) => {
+  try {
+    const { ApperClient } = window.ApperSDK
+    const apperClient = new ApperClient({
+      apperProjectId: import.meta.env.VITE_APPER_PROJECT_ID,
+      apperPublicKey: import.meta.env.VITE_APPER_PUBLIC_KEY
+    })
+
+    const response = await apperClient.fetchRecords('saved_post_c', {
+      fields: [{"field": {"Name": "Id"}}],
+      where: [
+        {"FieldName": "post_id_c", "Operator": "EqualTo", "Values": [parseInt(postId)]},
+        {"FieldName": "user_id_c", "Operator": "EqualTo", "Values": [parseInt(userId)]}
+      ]
+    })
+
+    return response.success && response.data.length > 0
+  } catch (error) {
+    console.error("Error checking save status:", error?.response?.data?.message || error)
+    return false
+  }
+}
+
+// Export the save/unsave functions
+export { savePost, unsavePost, checkSaveStatus };

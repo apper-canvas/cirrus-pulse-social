@@ -30,6 +30,7 @@ const [likesCount, setLikesCount] = useState((post.likes || []).length)
   const [commentLikes, setCommentLikes] = useState({})
   const [replyForms, setReplyForms] = useState({})
   const [replyTexts, setReplyTexts] = useState({})
+  const [isSaved, setIsSaved] = useState(false)
   const handleLike = async () => {
     try {
       const newLikedState = !isLiked
@@ -53,6 +54,7 @@ setLikesCount(prev => newLikedState ? prev + 1 : prev - 1)
 useEffect(() => {
     // Fetch comments on component mount to ensure they're available after page refresh
     fetchComments()
+    checkSaveStatus()
   }, [post.Id])
 
   // Separate effect to handle comments visibility toggle
@@ -62,7 +64,7 @@ useEffect(() => {
     }
   }, [showComments])
 
-  const fetchComments = async () => {
+const fetchComments = async () => {
     try {
       const postComments = await commentService.getByPostId(post.Id)
       setComments(postComments)
@@ -70,7 +72,7 @@ useEffect(() => {
       // Initialize comment likes state
       const likesState = {}
       postComments.forEach(comment => {
-// Initialize like state for each comment (will be updated after fetching likes)
+        // Initialize like state for each comment (will be updated after fetching likes)
         likesState[comment.Id] = {
           isLiked: false,
           count: 0
@@ -82,19 +84,71 @@ useEffect(() => {
     }
   }
 
+  const checkSaveStatus = async () => {
+    try {
+      const { postService } = await import('@/services/api/postService')
+      const saveStatus = await postService.checkSaveStatus(post.Id, currentUserId)
+      setIsSaved(saveStatus)
+    } catch (error) {
+      console.error("Failed to check save status:", error)
+    }
+  }
+
+  const handleSave = async () => {
+    try {
+      const { postService } = await import('@/services/api/postService')
+      
+      if (isSaved) {
+        await postService.unsavePost(post.Id, currentUserId)
+        setIsSaved(false)
+        toast.success("Post removed from saved", { autoClose: 1000 })
+      } else {
+        await postService.savePost(post.Id, currentUserId)
+        setIsSaved(true)
+        toast.success("Post saved!", { autoClose: 1000 })
+      }
+    } catch (error) {
+      toast.error("Failed to save post")
+    }
+  }
+
+  const handleShare = async () => {
+    try {
+      const shareData = {
+        title: `Post by ${post.author_id_c?.Name || 'Unknown User'}`,
+        text: post.content_c || post.content || '',
+        url: window.location.href
+      }
+
+      if (navigator.share) {
+        await navigator.share(shareData)
+        toast.success("Post shared!", { autoClose: 1000 })
+      } else {
+        // Fallback to clipboard
+        const shareText = `${shareData.title}\n${shareData.text}\n${shareData.url}`
+        await navigator.clipboard.writeText(shareText)
+        toast.success("Post link copied to clipboard!", { autoClose: 1000 })
+      }
+    } catch (error) {
+      if (error.name !== 'AbortError') {
+        toast.error("Failed to share post")
+      }
+    }
+  }
+
   const handleComment = async (e) => {
     e.preventDefault()
     if (!commentText.trim()) return
 
 try {
-      const newComment = await commentService.create({
+const newComment = await commentService.create({
         post_id_c: post.Id,
         author_id_c: currentUserId,
         content_c: commentText.trim()
       })
       
       setComments(prev => [...prev, newComment])
-setCommentLikes(prev => ({
+      setCommentLikes(prev => ({
         ...prev,
         [newComment.Id]: { isLiked: false, count: 0 }
       }))
@@ -141,7 +195,7 @@ const newReply = await commentService.replyToComment(parentCommentId, {
       
       setComments(prev => [...prev, newReply])
       setCommentLikes(prev => ({
-...prev,
+        ...prev,
         [newReply.Id]: { isLiked: false, count: 0 }
       }))
       // Close reply form and clear text
@@ -162,7 +216,7 @@ const newReply = await commentService.replyToComment(parentCommentId, {
   }
 
 const renderComment = (comment, isReply = false) => {
-const likes = commentLikes[comment.Id] || { isLiked: false, count: 0 }
+    const likes = commentLikes[comment.Id] || { isLiked: false, count: 0 }
     const replies = comments.filter(c => c.parentId === comment.Id)
     const showReplyForm = replyForms[comment.Id]
     const replyText = replyTexts[comment.Id] || ""
@@ -328,21 +382,36 @@ likes.isLiked
               <span className="text-sm font-medium">{likesCount}</span>
             </button>
 
-            <button
+<button
               onClick={() => setShowComments(!showComments)}
               className="flex items-center space-x-2 text-gray-500 hover:text-secondary transition-all duration-200 hover:scale-105"
             >
               <ApperIcon name="MessageCircle" className="h-5 w-5" />
-<span className="text-sm font-medium">{post.comment_count_c || 0}</span>
+              <span className="text-sm font-medium">{comments.length}</span>
             </button>
 
-            <button className="flex items-center space-x-2 text-gray-500 hover:text-accent transition-all duration-200 hover:scale-105">
+            <button 
+              onClick={handleShare}
+              className="flex items-center space-x-2 text-gray-500 hover:text-accent transition-all duration-200 hover:scale-105"
+            >
               <ApperIcon name="Share" className="h-5 w-5" />
             </button>
           </div>
 
-          <button className="text-gray-400 hover:text-gray-600 transition-colors duration-150">
-            <ApperIcon name="Bookmark" className="h-5 w-5" />
+          <button 
+            onClick={handleSave}
+            className={cn(
+              "transition-colors duration-150",
+              isSaved ? "text-accent" : "text-gray-400 hover:text-gray-600"
+            )}
+          >
+            <ApperIcon 
+              name="Bookmark" 
+              className={cn(
+                "h-5 w-5 transition-all duration-200",
+                isSaved ? "fill-current" : ""
+              )} 
+            />
           </button>
         </div>
       </div>
