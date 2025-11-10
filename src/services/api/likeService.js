@@ -161,5 +161,128 @@ export const likeService = {
       console.error("Error checking user like for comment:", error?.response?.data?.message || error);
       return null;
     }
+},
+
+  /**
+   * Get all likes for a specific post
+   */
+  async getLikesByPost(postId) {
+    try {
+      const apperClient = getApperClient();
+      
+      const params = {
+        fields: [
+          {"field": {"Name": "Id"}},
+          {"field": {"Name": "post_id_c"}},
+          {"field": {"Name": "user_id_c"}},
+          {"field": {"Name": "CreatedOn"}}
+        ],
+        where: [{
+          "FieldName": "post_id_c",
+          "Operator": "EqualTo",
+          "Values": [parseInt(postId)]
+        }],
+        orderBy: [{
+          "fieldName": "CreatedOn",
+          "sorttype": "DESC"
+        }]
+      };
+
+      const response = await apperClient.fetchRecords('like_c', params);
+      
+      if (!response.success) {
+        console.error("Error fetching post likes:", response.message);
+        return [];
+      }
+
+      return response.data || [];
+    } catch (error) {
+      console.error("Error fetching likes for post:", error?.response?.data?.message || error);
+      return [];
+    }
+  },
+
+  /**
+   * Create a new like record for a post
+   */
+  async createPostLike(postId, userId) {
+    try {
+      const apperClient = getApperClient();
+      
+      const params = {
+        records: [{
+          post_id_c: parseInt(postId),
+          user_id_c: parseInt(userId)
+        }]
+      };
+
+      const response = await apperClient.createRecord('like_c', params);
+      
+      if (!response.success) {
+        console.error("Error creating post like:", response.message);
+        return null;
+      }
+
+      if (response.results) {
+        const successful = response.results.filter(r => r.success);
+        const failed = response.results.filter(r => !r.success);
+        
+        if (failed.length > 0) {
+          console.error(`Failed to create ${failed.length} post like records: ${JSON.stringify(failed)}`);
+          failed.forEach(record => {
+            record.errors?.forEach(error => console.error(`${error.fieldLabel}: ${error}`));
+            if (record.message) console.error(record.message);
+          });
+        }
+        
+        return successful.length > 0 ? successful[0].data : null;
+      }
+      
+      return null;
+    } catch (error) {
+      console.error("Error creating post like:", error?.response?.data?.message || error);
+      return null;
+    }
+  },
+
+  /**
+   * Check if a user has liked a specific post
+   */
+  async getUserLikeForPost(postId, userId) {
+    try {
+      const apperClient = getApperClient();
+      
+      const params = {
+        fields: [
+          {"field": {"Name": "Id"}},
+          {"field": {"Name": "post_id_c"}},
+          {"field": {"Name": "user_id_c"}}
+        ],
+        where: [
+          {
+            "FieldName": "post_id_c",
+            "Operator": "EqualTo",
+            "Values": [parseInt(postId)]
+          },
+          {
+            "FieldName": "user_id_c",
+            "Operator": "EqualTo",
+            "Values": [parseInt(userId)]
+          }
+        ]
+      };
+
+      const response = await apperClient.fetchRecords('like_c', params);
+      
+      if (!response.success) {
+        console.error("Error checking user post like:", response.message);
+        return null;
+      }
+
+      return response.data && response.data.length > 0 ? response.data[0] : null;
+    } catch (error) {
+      console.error("Error checking user like for post:", error?.response?.data?.message || error);
+      return null;
+    }
   }
 };

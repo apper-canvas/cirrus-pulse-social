@@ -3,6 +3,7 @@ import { useSelector } from "react-redux";
 import { formatDistanceToNow } from "date-fns";
 import { toast } from "react-toastify";
 import { commentService } from "@/services/api/commentService";
+import { likeService } from "@/services/api/likeService";
 import ApperIcon from "@/components/ApperIcon";
 import Button from "@/components/atoms/Button";
 import Avatar from "@/components/atoms/Avatar";
@@ -70,7 +71,7 @@ const fetchComments = async () => {
       setComments(postComments)
       
       // Initialize comment likes state
-      const likesState = {}
+const likesState = {}
       postComments.forEach(comment => {
         // Initialize like state for each comment (will be updated after fetching likes)
         likesState[comment.Id] = {
@@ -79,6 +80,24 @@ const fetchComments = async () => {
         }
       })
       setCommentLikes(likesState)
+      
+      // Fetch likes for each comment
+      postComments.forEach(async (comment) => {
+        try {
+          const commentLikes = await likeService.getLikesByComment(comment.Id)
+          const userLike = await likeService.getUserLikeForComment(comment.Id, currentUserId)
+          
+          setCommentLikes(prev => ({
+            ...prev,
+            [comment.Id]: {
+              isLiked: !!userLike,
+              count: commentLikes.length
+            }
+          }))
+        } catch (error) {
+          console.error(`Error fetching likes for comment ${comment.Id}:`, error)
+        }
+      })
     } catch (error) {
       toast.error("Failed to load comments")
     }
