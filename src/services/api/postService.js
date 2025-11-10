@@ -1,210 +1,356 @@
-import posts from "@/services/mockData/posts.json"
-import users from "@/services/mockData/users.json"
-
-// Simulate API delay
-const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms))
+import { getApperClient } from "@/services/apperClient"
 
 export const postService = {
   async getAll() {
-    await delay(400)
-    // Enhance posts with author information
-    const enhancedPosts = posts.map(post => {
-      const author = users.find(u => u.Id === parseInt(post.authorId))
-      return {
-        ...post,
-        author: author ? {
-          Id: author.Id,
-          username: author.username,
-          profilePicture: author.profilePicture,
-          bio: author.bio
-        } : null
+    try {
+      const apperClient = getApperClient()
+      if (!apperClient) {
+        console.error("ApperClient not available")
+        return []
       }
-    })
-    
-    // Sort by creation date (newest first)
-    return enhancedPosts.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+
+      const response = await apperClient.fetchRecords('post_c', {
+        fields: [
+          {"field": {"Name": "Name"}},
+          {"field": {"Name": "content_c"}},
+          {"field": {"Name": "image_url_c"}},
+          {"field": {"Name": "comment_count_c"}},
+          {"field": {"Name": "likes_c"}},
+          {"field": {"Name": "reactions_c"}},
+          {"field": {"Name": "CreatedOn"}},
+          {"field": {"Name": "author_id_c"}}
+        ],
+        orderBy: [{"fieldName": "CreatedOn", "sorttype": "DESC"}],
+        pagingInfo: { limit: 100, offset: 0 }
+      })
+
+      if (!response.success) {
+        console.error("Failed to fetch posts:", response.message)
+        return []
+      }
+
+      return response.data || []
+    } catch (error) {
+      console.error("Error fetching posts:", error?.response?.data?.message || error)
+      return []
+    }
   },
 
   async getById(id) {
-    await delay(200)
-    const post = posts.find(p => p.Id === parseInt(id))
-    if (!post) {
-      throw new Error("Post not found")
-    }
-    
-    // Enhance with author information
-    const author = users.find(u => u.Id === parseInt(post.authorId))
-    return {
-      ...post,
-      author: author ? {
-        Id: author.Id,
-        username: author.username,
-        profilePicture: author.profilePicture,
-        bio: author.bio
-      } : null
+    try {
+      const apperClient = getApperClient()
+      if (!apperClient) {
+        console.error("ApperClient not available")
+        return null
+      }
+
+      const response = await apperClient.getRecordById('post_c', parseInt(id), {
+        fields: [
+          {"field": {"Name": "Name"}},
+          {"field": {"Name": "content_c"}},
+          {"field": {"Name": "image_url_c"}},
+          {"field": {"Name": "comment_count_c"}},
+          {"field": {"Name": "likes_c"}},
+          {"field": {"Name": "reactions_c"}},
+          {"field": {"Name": "CreatedOn"}},
+          {"field": {"Name": "author_id_c"}}
+        ]
+      })
+
+      if (!response.success) {
+        console.error("Failed to fetch post:", response.message)
+        return null
+      }
+
+      return response.data
+    } catch (error) {
+      console.error(`Error fetching post ${id}:`, error?.response?.data?.message || error)
+      return null
     }
   },
 
   async getByUserId(userId) {
-    await delay(300)
-    const userPosts = posts.filter(p => p.authorId === userId.toString())
-    
-    // Enhance with author information
-    const author = users.find(u => u.Id === parseInt(userId))
-    return userPosts.map(post => ({
-      ...post,
-      author: author ? {
-        Id: author.Id,
-        username: author.username,
-        profilePicture: author.profilePicture,
-        bio: author.bio
-      } : null
-    })).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+    try {
+      const apperClient = getApperClient()
+      if (!apperClient) {
+        console.error("ApperClient not available")
+        return []
+      }
+
+      const response = await apperClient.fetchRecords('post_c', {
+        fields: [
+          {"field": {"Name": "Name"}},
+          {"field": {"Name": "content_c"}},
+          {"field": {"Name": "image_url_c"}},
+          {"field": {"Name": "comment_count_c"}},
+          {"field": {"Name": "likes_c"}},
+          {"field": {"Name": "reactions_c"}},
+          {"field": {"Name": "CreatedOn"}},
+          {"field": {"Name": "author_id_c"}}
+        ],
+        where: [{"FieldName": "author_id_c", "Operator": "EqualTo", "Values": [parseInt(userId)]}],
+        orderBy: [{"fieldName": "CreatedOn", "sorttype": "DESC"}],
+        pagingInfo: { limit: 100, offset: 0 }
+      })
+
+      if (!response.success) {
+        console.error("Failed to fetch user posts:", response.message)
+        return []
+      }
+
+      return response.data || []
+    } catch (error) {
+      console.error(`Error fetching posts for user ${userId}:`, error?.response?.data?.message || error)
+      return []
+    }
   },
 
   async getFeedPosts(userId) {
-    await delay(350)
-    const user = users.find(u => u.Id === parseInt(userId))
-    if (!user) {
-      throw new Error("User not found")
-    }
-    
-    // Get posts from friends and user
-    const friendIds = [...user.friends, userId.toString()]
-    const feedPosts = posts.filter(p => friendIds.includes(p.authorId))
-    
-    // Enhance with author information
-    const enhancedPosts = feedPosts.map(post => {
-      const author = users.find(u => u.Id === parseInt(post.authorId))
-      return {
-        ...post,
-        author: author ? {
-          Id: author.Id,
-          username: author.username,
-          profilePicture: author.profilePicture,
-          bio: author.bio
-        } : null
+    try {
+      const apperClient = getApperClient()
+      if (!apperClient) {
+        console.error("ApperClient not available")
+        return []
       }
-    })
-    
-    // Sort by creation date (newest first)
-    return enhancedPosts.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+
+      // For now, return all posts - in production, you'd filter by friends
+      const response = await apperClient.fetchRecords('post_c', {
+        fields: [
+          {"field": {"Name": "Name"}},
+          {"field": {"Name": "content_c"}},
+          {"field": {"Name": "image_url_c"}},
+          {"field": {"Name": "comment_count_c"}},
+          {"field": {"Name": "likes_c"}},
+          {"field": {"Name": "reactions_c"}},
+          {"field": {"Name": "CreatedOn"}},
+          {"field": {"Name": "author_id_c"}}
+        ],
+        orderBy: [{"fieldName": "CreatedOn", "sorttype": "DESC"}],
+        pagingInfo: { limit: 50, offset: 0 }
+      })
+
+      if (!response.success) {
+        console.error("Failed to fetch feed posts:", response.message)
+        return []
+      }
+
+      return response.data || []
+    } catch (error) {
+      console.error(`Error fetching feed posts for user ${userId}:`, error?.response?.data?.message || error)
+      return []
+    }
   },
 
-async create(postData) {
-    await delay(500)
-    const maxId = Math.max(...posts.map(p => p.Id))
-    const newPost = {
-      ...postData,
-      Id: maxId + 1,
-      likes: [],
-      reactions: {},
-      commentCount: 0,
-      createdAt: new Date().toISOString()
-    }
-    
-    posts.unshift(newPost)
-    
-    // Enhance with author information
-    const author = users.find(u => u.Id === parseInt(newPost.authorId))
-    return {
-      ...newPost,
-      author: author ? {
-        Id: author.Id,
-        username: author.username,
-        profilePicture: author.profilePicture,
-        bio: author.bio
-      } : null
+  async create(postData) {
+    try {
+      const apperClient = getApperClient()
+      if (!apperClient) {
+        console.error("ApperClient not available")
+        return null
+      }
+
+      const params = {
+        records: [{
+          Name: postData.Name || "Post",
+          content_c: postData.content_c || postData.content,
+          image_url_c: postData.image_url_c || postData.imageUrl || "",
+          comment_count_c: 0,
+          likes_c: "[]", // Empty array as string
+          reactions_c: "{}",
+          author_id_c: parseInt(postData.author_id_c || postData.authorId)
+        }]
+      }
+
+      const response = await apperClient.createRecord('post_c', params)
+
+      if (!response.success) {
+        console.error("Failed to create post:", response.message)
+        return null
+      }
+
+      if (response.results) {
+        const successful = response.results.filter(r => r.success)
+        const failed = response.results.filter(r => !r.success)
+        
+        if (failed.length > 0) {
+          console.error(`Failed to create ${failed.length} posts:`, failed)
+          failed.forEach(record => {
+            record.errors?.forEach(error => console.error(`${error.fieldLabel}: ${error}`))
+            if (record.message) console.error(record.message)
+          })
+        }
+        return successful.length > 0 ? successful[0].data : null
+      }
+      
+      return null
+    } catch (error) {
+      console.error("Error creating post:", error?.response?.data?.message || error)
+      return null
     }
   },
 
   async update(id, updates) {
-    await delay(300)
-    const postIndex = posts.findIndex(p => p.Id === parseInt(id))
-    if (postIndex === -1) {
-      throw new Error("Post not found")
-    }
-    
-    posts[postIndex] = { ...posts[postIndex], ...updates }
-    
-    // Enhance with author information
-    const author = users.find(u => u.Id === parseInt(posts[postIndex].authorId))
-    return {
-      ...posts[postIndex],
-      author: author ? {
-        Id: author.Id,
-        username: author.username,
-        profilePicture: author.profilePicture,
-        bio: author.bio
-      } : null
+    try {
+      const apperClient = getApperClient()
+      if (!apperClient) {
+        console.error("ApperClient not available")
+        return null
+      }
+
+      const updateData = { Id: parseInt(id) }
+      
+      // Only include updateable fields
+      if (updates.Name !== undefined) updateData.Name = updates.Name
+      if (updates.content_c !== undefined) updateData.content_c = updates.content_c
+      if (updates.image_url_c !== undefined) updateData.image_url_c = updates.image_url_c
+      if (updates.comment_count_c !== undefined) updateData.comment_count_c = updates.comment_count_c
+      if (updates.likes_c !== undefined) updateData.likes_c = updates.likes_c
+      if (updates.reactions_c !== undefined) updateData.reactions_c = updates.reactions_c
+
+      const params = { records: [updateData] }
+      const response = await apperClient.updateRecord('post_c', params)
+
+      if (!response.success) {
+        console.error("Failed to update post:", response.message)
+        return null
+      }
+
+      if (response.results) {
+        const successful = response.results.filter(r => r.success)
+        const failed = response.results.filter(r => !r.success)
+        
+        if (failed.length > 0) {
+          console.error(`Failed to update ${failed.length} posts:`, failed)
+          failed.forEach(record => {
+            record.errors?.forEach(error => console.error(`${error.fieldLabel}: ${error}`))
+            if (record.message) console.error(record.message)
+          })
+        }
+        return successful.length > 0 ? successful[0].data : null
+      }
+      
+      return null
+    } catch (error) {
+      console.error("Error updating post:", error?.response?.data?.message || error)
+      return null
     }
   },
 
   async delete(id) {
-    await delay(300)
-    const postIndex = posts.findIndex(p => p.Id === parseInt(id))
-    if (postIndex === -1) {
-      throw new Error("Post not found")
+    try {
+      const apperClient = getApperClient()
+      if (!apperClient) {
+        console.error("ApperClient not available")
+        return null
+      }
+
+      const params = { RecordIds: [parseInt(id)] }
+      const response = await apperClient.deleteRecord('post_c', params)
+
+      if (!response.success) {
+        console.error("Failed to delete post:", response.message)
+        return null
+      }
+
+      if (response.results) {
+        const successful = response.results.filter(r => r.success)
+        const failed = response.results.filter(r => !r.success)
+        
+        if (failed.length > 0) {
+          console.error(`Failed to delete ${failed.length} posts:`, failed)
+          failed.forEach(record => {
+            if (record.message) console.error(record.message)
+          })
+        }
+        return successful.length === 1
+      }
+      
+      return false
+    } catch (error) {
+      console.error("Error deleting post:", error?.response?.data?.message || error)
+      return false
     }
-    
-    const deletedPost = posts.splice(postIndex, 1)[0]
-    return { ...deletedPost }
   },
 
-async addReaction(postId, userId, emoji) {
-    await delay(250)
-    const post = posts.find(p => p.Id === parseInt(postId))
-    if (!post) {
-      throw new Error("Post not found")
-    }
-    
-    // Initialize reactions if not present
-    if (!post.reactions) {
-      post.reactions = {}
-    }
-    
-    const userIdStr = userId.toString()
-    
-    // Remove user from all other reactions
-    Object.keys(post.reactions).forEach(e => {
-      post.reactions[e] = post.reactions[e].filter(id => id !== userIdStr)
-      if (post.reactions[e].length === 0) {
-        delete post.reactions[e]
+  async addReaction(postId, userId, emoji) {
+    try {
+      // Get current post
+      const post = await this.getById(postId)
+      if (!post) {
+        console.error("Post not found")
+        return null
       }
-    })
-    
-    // Add user to selected emoji
-    if (!post.reactions[emoji]) {
-      post.reactions[emoji] = []
+
+      // Parse current reactions
+      let reactions = {}
+      try {
+        reactions = JSON.parse(post.reactions_c || "{}")
+      } catch (e) {
+        reactions = {}
+      }
+
+      const userIdStr = userId.toString()
+
+      // Remove user from all other reactions
+      Object.keys(reactions).forEach(e => {
+        reactions[e] = reactions[e].filter(id => id !== userIdStr)
+        if (reactions[e].length === 0) {
+          delete reactions[e]
+        }
+      })
+
+      // Add user to selected emoji
+      if (!reactions[emoji]) {
+        reactions[emoji] = []
+      }
+      if (!reactions[emoji].includes(userIdStr)) {
+        reactions[emoji].push(userIdStr)
+      }
+
+      // Update post
+      return await this.update(postId, {
+        reactions_c: JSON.stringify(reactions)
+      })
+    } catch (error) {
+      console.error("Error adding reaction:", error?.response?.data?.message || error)
+      return null
     }
-    if (!post.reactions[emoji].includes(userIdStr)) {
-      post.reactions[emoji].push(userIdStr)
-    }
-    
-    return { ...post }
   },
 
   async removeReaction(postId, userId) {
-    await delay(250)
-    const post = posts.find(p => p.Id === parseInt(postId))
-    if (!post) {
-      throw new Error("Post not found")
-    }
-    
-    if (!post.reactions) {
-      return { ...post }
-    }
-    
-    const userIdStr = userId.toString()
-    
-    // Remove user from all reactions
-    Object.keys(post.reactions).forEach(emoji => {
-      post.reactions[emoji] = post.reactions[emoji].filter(id => id !== userIdStr)
-      if (post.reactions[emoji].length === 0) {
-        delete post.reactions[emoji]
+    try {
+      // Get current post
+      const post = await this.getById(postId)
+      if (!post) {
+        console.error("Post not found")
+        return null
       }
-    })
-    
-    return { ...post }
+
+      // Parse current reactions
+      let reactions = {}
+      try {
+        reactions = JSON.parse(post.reactions_c || "{}")
+      } catch (e) {
+        reactions = {}
+      }
+
+      const userIdStr = userId.toString()
+
+      // Remove user from all reactions
+      Object.keys(reactions).forEach(emoji => {
+        reactions[emoji] = reactions[emoji].filter(id => id !== userIdStr)
+        if (reactions[emoji].length === 0) {
+          delete reactions[emoji]
+        }
+      })
+
+      // Update post
+      return await this.update(postId, {
+        reactions_c: JSON.stringify(reactions)
+      })
+    } catch (error) {
+      console.error("Error removing reaction:", error?.response?.data?.message || error)
+      return null
+    }
   }
 }

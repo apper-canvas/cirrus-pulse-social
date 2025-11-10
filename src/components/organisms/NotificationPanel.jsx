@@ -4,6 +4,7 @@ import { cn } from "@/utils/cn"
 import ApperIcon from "@/components/ApperIcon"
 import Button from "@/components/atoms/Button"
 import { notificationService } from "@/services/api/notificationService"
+import { useSelector } from "react-redux"
 
 const NotificationPanel = ({ isOpen, onClose }) => {
   const [notifications, setNotifications] = useState([])
@@ -21,7 +22,29 @@ const NotificationPanel = ({ isOpen, onClose }) => {
     try {
       setLoading(true)
       setError("")
-      const data = await notificationService.getAll()
+const { user } = useSelector((state) => state.user)
+      const currentUserId = user?.userId || user?.Id || "1"
+      
+      const data = await notificationService.getByUserId(currentUserId)
+      
+      // Transform database notifications to expected format
+      const transformedData = data.map(notification => ({
+        ...notification,
+        message: notification.message_c,
+        type: notification.type_c,
+        read: notification.read_c,
+        actorId: notification.actor_id_c?.Id || notification.actor_id_c,
+        userId: notification.user_id_c?.Id || notification.user_id_c,
+        createdAt: notification.CreatedOn,
+        // Add actor information from lookup if available
+        actor: notification.actor_id_c?.Name ? {
+          Id: notification.actor_id_c.Id,
+          username_c: notification.actor_id_c.Name,
+          profile_picture_c: ""
+        } : null
+      }))
+      
+      setNotifications(transformedData)
       setNotifications(data)
     } catch (err) {
       setError("Failed to load notifications")
@@ -32,9 +55,9 @@ const NotificationPanel = ({ isOpen, onClose }) => {
 
   const markAsRead = async (notificationId) => {
     try {
-      const updatedNotification = await notificationService.update(notificationId, { read: true })
+const updatedNotification = await notificationService.update(notificationId, { read_c: true })
       setNotifications(prev => 
-        prev.map(n => n.Id === notificationId ? updatedNotification : n)
+        prev.map(n => n.Id === notificationId ? { ...n, read: true } : n)
       )
     } catch (err) {
       console.error("Failed to mark notification as read:", err)
@@ -44,8 +67,8 @@ const NotificationPanel = ({ isOpen, onClose }) => {
   const markAllAsRead = async () => {
     try {
       const unreadNotifications = notifications.filter(n => !n.read)
-      for (const notification of unreadNotifications) {
-        await notificationService.update(notification.Id, { read: true })
+for (const notification of unreadNotifications) {
+        await notificationService.update(notification.Id, { read_c: true })
       }
       setNotifications(prev => prev.map(n => ({ ...n, read: true })))
     } catch (err) {
@@ -207,11 +230,11 @@ const NotificationPanel = ({ isOpen, onClose }) => {
                         "text-sm",
                         !notification.read ? "font-semibold text-gray-900" : "text-gray-800"
                       )}>
-                        {notification.message}
+{notification.actor?.username_c || 'Someone'} {notification.message}
                       </p>
                       <p className="text-xs text-gray-500 mt-1">
-                        {formatDistanceToNow(new Date(notification.createdAt), { addSuffix: true })}
-                      </p>
+{formatDistanceToNow(new Date(notification.CreatedOn || notification.createdAt), { addSuffix: true })}
+                       </p>
                     </div>
                     {!notification.read && (
                       <div className="w-2 h-2 bg-primary rounded-full flex-shrink-0 mt-2" />

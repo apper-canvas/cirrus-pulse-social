@@ -1,19 +1,21 @@
-import { useState, useEffect } from "react"
-import { useParams, useNavigate } from "react-router-dom"
-import { formatDistanceToNow } from "date-fns"
-import { toast } from "react-toastify"
-import { cn } from "@/utils/cn"
-import ApperIcon from "@/components/ApperIcon"
-import Button from "@/components/atoms/Button"
-import Avatar from "@/components/atoms/Avatar"
-import ConversationCard from "@/components/molecules/ConversationCard"
-import Loading from "@/components/ui/Loading"
-import Error from "@/components/ui/Error"
-import Empty from "@/components/ui/Empty"
-import { messageService } from "@/services/api/messageService"
-import { userService } from "@/services/api/userService"
-
+import React, { useEffect, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
+import { formatDistanceToNow } from "date-fns";
+import { toast } from "react-toastify";
+import { messageService } from "@/services/api/messageService";
+import { userService } from "@/services/api/userService";
+import { useSelector } from "react-redux";
+import ApperIcon from "@/components/ApperIcon";
+import Button from "@/components/atoms/Button";
+import Avatar from "@/components/atoms/Avatar";
+import ConversationCard from "@/components/molecules/ConversationCard";
+import Error from "@/components/ui/Error";
+import Empty from "@/components/ui/Empty";
+import Loading from "@/components/ui/Loading";
+import { cn } from "@/utils/cn";
 const Messages = () => {
+  const { user } = useSelector((state) => state.user)
+  const currentUserId = user?.userId || user?.Id || "1"
   const { conversationId } = useParams()
   const navigate = useNavigate()
   const [conversations, setConversations] = useState([])
@@ -38,7 +40,7 @@ const Messages = () => {
     try {
       setLoading(true)
       setError("")
-      const data = await messageService.getConversations("1") // Current user ID
+const data = await messageService.getConversations(currentUserId)
       setConversations(data)
     } catch (err) {
       setError("Failed to load conversations")
@@ -58,11 +60,11 @@ const Messages = () => {
       if (conv) {
         setActiveConversation(conv)
         // Mark conversation as read
-        await messageService.markConversationAsRead(convId, "1")
+await messageService.markConversationAsRead(convId, currentUserId)
       } else {
         // Load conversation info if not in list
         const userIds = convId.split("-")
-        const otherUserId = userIds.find(id => id !== "1")
+const otherUserId = userIds.find(id => id !== currentUserId)
         if (otherUserId) {
           const otherUser = await userService.getById(otherUserId)
           setActiveConversation({
@@ -88,7 +90,7 @@ const Messages = () => {
     if (!newMessage.trim() || !conversationId) return
 
     try {
-      const message = {
+const message = {
         conversationId,
         senderId: "1", // Current user ID
         content: newMessage.trim(),
@@ -261,23 +263,23 @@ const Messages = () => {
                         key={message.Id}
                         className={cn(
                           "flex",
-                          message.senderId === "1" ? "justify-end" : "justify-start"
+(message.senderId || message.sender_id_c?.Id || message.sender_id_c) === currentUserId ? "justify-end" : "justify-start"
                         )}
                       >
                         <div
                           className={cn(
                             "max-w-xs lg:max-w-md px-4 py-2 rounded-xl text-sm",
-                            message.senderId === "1"
-                              ? "bg-gradient-to-r from-primary to-primary/90 text-white rounded-br-sm"
-                              : "bg-white text-gray-900 shadow-sm border border-gray-200/50 rounded-bl-sm"
+(message.senderId || message.sender_id_c?.Id || message.sender_id_c) === currentUserId
+                               ? "bg-gradient-to-r from-primary to-primary/90 text-white rounded-br-sm"
+                               : "bg-white text-gray-900 shadow-sm border border-gray-200/50 rounded-bl-sm"
                           )}
-                        >
-                          <p>{message.content}</p>
+>
+                          <p>{message.content_c || message.content}</p>
                           <p className={cn(
                             "text-xs mt-1",
-                            message.senderId === "1" ? "text-white/70" : "text-gray-500"
-                          )}>
-                            {formatDistanceToNow(new Date(message.createdAt), { addSuffix: true })}
+                            (message.senderId || message.sender_id_c?.Id || message.sender_id_c) === currentUserId ? "text-white/70" : "text-gray-500"
+                           )}>
+                            {formatDistanceToNow(new Date(message.CreatedOn || message.createdAt), { addSuffix: true })}
                           </p>
                         </div>
                       </div>

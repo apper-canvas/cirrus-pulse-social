@@ -1,10 +1,11 @@
-import { useState } from "react"
-import { useNavigate } from "react-router-dom"
-import { toast } from "react-toastify"
-import { cn } from "@/utils/cn"
-import ApperIcon from "@/components/ApperIcon"
-import Avatar from "@/components/atoms/Avatar"
-import Button from "@/components/atoms/Button"
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { toast } from "react-toastify";
+import ApperIcon from "@/components/ApperIcon";
+import Button from "@/components/atoms/Button";
+import Avatar from "@/components/atoms/Avatar";
+import Friends from "@/components/pages/Friends";
+import { cn } from "@/utils/cn";
 
 const UserCard = ({ user, relationship = "none", onFriendAction, onMessage, className }) => {
   const [isLoading, setIsLoading] = useState(false)
@@ -118,9 +119,9 @@ const UserCard = ({ user, relationship = "none", onFriendAction, onMessage, clas
       className
     )}>
       {/* User Info */}
-      <div className="flex items-start space-x-3 mb-3">
+<div className="flex items-start space-x-3 mb-3">
         <Avatar
-          src={user.profilePicture}
+          src={user.profile_picture_c || ""}
           alt={user.username}
           size="lg"
           online={user.online}
@@ -132,19 +133,19 @@ const UserCard = ({ user, relationship = "none", onFriendAction, onMessage, clas
             className="font-semibold text-gray-900 hover:text-primary cursor-pointer transition-colors duration-150"
             onClick={() => navigate(`/profile/${user.Id}`)}
           >
-            {user.username}
+            {user.username_c || user.Name || user.username}
           </h3>
-          {user.bio && (
-            <p className="text-sm text-gray-600 mt-1 line-clamp-2">{user.bio}</p>
+          {(user.bio_c || user.bio) && (
+            <p className="text-sm text-gray-600 mt-1 line-clamp-2">{user.bio_c || user.bio}</p>
           )}
           <div className="flex items-center space-x-4 mt-2 text-xs text-gray-500">
             <span className="flex items-center">
               <ApperIcon name="Users" className="h-3 w-3 mr-1" />
-              {user.friendsCount || 0} friends
-            </span>
-            <span className="flex items-center">
-              <ApperIcon name="MapPin" className="h-3 w-3 mr-1" />
-              {user.location || "Unknown"}
+{user.friends_count_c || 0} friends
+             </span>
+             <span className="flex items-center">
+               <ApperIcon name="MapPin" className="h-3 w-3 mr-1" />
+               {user.location_c || "Unknown"}
             </span>
           </div>
         </div>

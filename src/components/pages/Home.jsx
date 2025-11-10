@@ -1,13 +1,15 @@
-import { useState, useEffect } from "react"
-import { toast } from "react-toastify"
-import PostComposer from "@/components/molecules/PostComposer"
-import PostCard from "@/components/molecules/PostCard"
-import Loading from "@/components/ui/Loading"
-import Error from "@/components/ui/Error"
-import Empty from "@/components/ui/Empty"
-import { postService } from "@/services/api/postService"
-
+import React, { useEffect, useState } from "react";
+import { toast } from "react-toastify";
+import { postService } from "@/services/api/postService";
+import { useSelector } from "react-redux";
+import PostComposer from "@/components/molecules/PostComposer";
+import PostCard from "@/components/molecules/PostCard";
+import Error from "@/components/ui/Error";
+import Empty from "@/components/ui/Empty";
+import Loading from "@/components/ui/Loading";
 const Home = () => {
+  const { user } = useSelector((state) => state.user)
+  const currentUserId = user?.userId || user?.Id || "1"
   const [posts, setPosts] = useState([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
@@ -21,7 +23,7 @@ const Home = () => {
       setLoading(true)
       setError("")
       // Load feed posts for current user (ID: 1)
-      const data = await postService.getFeedPosts("1")
+      const data = await postService.getFeedPosts(currentUserId)
       setPosts(data)
     } catch (err) {
       setError("Failed to load posts")
@@ -32,7 +34,10 @@ const Home = () => {
 
   const handleCreatePost = async (postData) => {
     try {
-      const newPost = await postService.create(postData)
+      const newPost = await postService.create({
+        ...postData,
+        author_id_c: currentUserId
+      })
       setPosts(prev => [newPost, ...prev])
       toast.success("Post created successfully!")
     } catch (err) {
@@ -44,8 +49,10 @@ const Home = () => {
   const handleLikePost = async (postId, isLiked) => {
     try {
       if (isLiked) {
-        await postService.likePost(postId, "1")
+        // Like functionality - to be implemented with reactions
+        toast.success("Post liked!")
       } else {
+        toast.success("Post unliked!")
         await postService.unlikePost(postId, "1")
       }
     } catch (err) {

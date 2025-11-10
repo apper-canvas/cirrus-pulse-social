@@ -1,9 +1,14 @@
-import { NavLink, useLocation } from "react-router-dom"
-import { cn } from "@/utils/cn"
-import ApperIcon from "@/components/ApperIcon"
+import { useSelector } from "react-redux";
+import { NavLink, useLocation } from "react-router-dom";
+import React from "react";
+import ApperIcon from "@/components/ApperIcon";
+import Friends from "@/components/pages/Friends";
+import { cn } from "@/utils/cn";
 
 const MobileSidebar = ({ isOpen, onClose }) => {
   const location = useLocation()
+  const { user } = useSelector((state) => state.user)
+  const currentUserId = user?.userId || user?.Id || "1"
 
   const navigationItems = [
     {
@@ -31,7 +36,7 @@ const MobileSidebar = ({ isOpen, onClose }) => {
     },
     {
       name: "Profile",
-      path: "/profile/1",
+      path: `/profile/${currentUserId}`,
       icon: "User"
     }
   ]

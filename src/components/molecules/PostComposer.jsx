@@ -1,16 +1,17 @@
 import React, { useEffect, useState } from "react";
+import { useSelector } from "react-redux";
 import { toast } from "react-toastify";
 import ApperIcon from "@/components/ApperIcon";
 import Textarea from "@/components/atoms/Textarea";
 import Button from "@/components/atoms/Button";
 import Avatar from "@/components/atoms/Avatar";
 import { cn } from "@/utils/cn";
-
-const PostComposer = ({ onCreatePost, className }) => {
-  const [content, setContent] = useState("")
-  const [imageFile, setImageFile] = useState(null)
-  const [imagePreview, setImagePreview] = useState("")
-const [isExpanded, setIsExpanded] = useState(false)
+const PostComposer = ({ onCreatePost, className = "" }) => {
+  const { user } = useSelector((state) => state.user);
+  const [content, setContent] = useState("");
+  const [imageFile, setImageFile] = useState(null);
+  const [imagePreview, setImagePreview] = useState("");
+  const [isExpanded, setIsExpanded] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [showEmojiPicker, setShowEmojiPicker] = useState(false)
   const handleImageUpload = (e) => {
@@ -52,12 +53,8 @@ const handleSubmit = async (e) => {
       }
 
       const postData = {
-        content: content.trim(),
-        imageUrl,
-        authorId: "1", // Current user ID
-        likes: [],
-        commentCount: 0,
-        createdAt: new Date().toISOString()
+content_c: content.trim(),
+        image_url_c: imageUrl
       }
 
       if (onCreatePost) {

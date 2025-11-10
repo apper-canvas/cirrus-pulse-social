@@ -1,16 +1,18 @@
-import { useState, useEffect } from "react"
-import { formatDistanceToNow } from "date-fns"
-import { toast } from "react-toastify"
-import { cn } from "@/utils/cn"
-import ApperIcon from "@/components/ApperIcon"
-import Button from "@/components/atoms/Button"
-import Avatar from "@/components/atoms/Avatar"
-import Loading from "@/components/ui/Loading"
-import Error from "@/components/ui/Error"
-import Empty from "@/components/ui/Empty"
-import { notificationService } from "@/services/api/notificationService"
-
+import React, { useEffect, useState } from "react";
+import { formatDistanceToNow } from "date-fns";
+import { toast } from "react-toastify";
+import { notificationService } from "@/services/api/notificationService";
+import { useSelector } from "react-redux";
+import ApperIcon from "@/components/ApperIcon";
+import Button from "@/components/atoms/Button";
+import Avatar from "@/components/atoms/Avatar";
+import Error from "@/components/ui/Error";
+import Empty from "@/components/ui/Empty";
+import Loading from "@/components/ui/Loading";
+import { cn } from "@/utils/cn";
 const Notifications = () => {
+  const { user } = useSelector((state) => state.user)
+  const currentUserId = user?.userId || user?.Id || "1"
   const [notifications, setNotifications] = useState([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
@@ -21,13 +23,33 @@ const Notifications = () => {
   }, [])
 
   const loadNotifications = async () => {
+    setLoading(true)
+    setError("")
+    
     try {
-      setLoading(true)
-      setError("")
-      const data = await notificationService.getAll()
-      setNotifications(data)
+      // Get notifications for current user
+      const data = await notificationService.getByUserId(currentUserId)
+      
+      // Transform database notifications to expected format
+      const transformedData = data.map(notification => ({
+        ...notification,
+        message: notification.message_c,
+        type: notification.type_c,
+        read: notification.read_c,
+        actorId: notification.actor_id_c?.Id || notification.actor_id_c,
+        userId: notification.user_id_c?.Id || notification.user_id_c,
+        createdAt: notification.CreatedOn,
+        // Add actor information from lookup if available
+        actor: notification.actor_id_c?.Name ? {
+          Id: notification.actor_id_c.Id,
+          username_c: notification.actor_id_c.Name,
+          profile_picture_c: ""
+        } : null
+      }))
+      setNotifications(transformedData)
     } catch (err) {
       setError("Failed to load notifications")
+      console.error('Error loading notifications:', err)
     } finally {
       setLoading(false)
     }
@@ -35,7 +57,7 @@ const Notifications = () => {
 
   const markAsRead = async (notificationId) => {
     try {
-      await notificationService.update(notificationId, { read: true })
+await notificationService.update(notificationId, { read_c: true })
       setNotifications(prev => 
         prev.map(n => n.Id === notificationId ? { ...n, read: true } : n)
       )
@@ -44,13 +66,14 @@ const Notifications = () => {
     }
   }
 
-  const markAllAsRead = async () => {
+const markAllAsRead = async () => {
     try {
-      await notificationService.markAllAsRead("1") // Current user ID
+      await notificationService.markAllAsRead(currentUserId)
       setNotifications(prev => prev.map(n => ({ ...n, read: true })))
       toast.success("All notifications marked as read")
     } catch (err) {
       toast.error("Failed to mark notifications as read")
+      console.error('Error marking all as read:', err)
     }
   }
 
@@ -219,18 +242,18 @@ const Notifications = () => {
                   
                   {/* Notification Content */}
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <p className={cn(
-                          "text-sm leading-relaxed",
-                          !notification.read ? "font-semibold text-gray-900" : "text-gray-800"
-                        )}>
-                          {notification.message}
-                        </p>
-                        <p className="text-xs text-gray-500 mt-1">
-                          {formatDistanceToNow(new Date(notification.createdAt), { addSuffix: true })}
-                        </p>
-                      </div>
+<div className="flex items-start justify-between">
+                       <div className="flex-1">
+                         <p className={cn(
+                           "text-sm leading-relaxed",
+                           !notification.read ? "font-semibold text-gray-900" : "text-gray-800"
+                         )}>
+                           {notification.actor?.username_c || 'Someone'} {notification.message}
+                         </p>
+                         <p className="text-xs text-gray-500 mt-1">
+                           {formatDistanceToNow(new Date(notification.CreatedOn || notification.createdAt), { addSuffix: true })}
+                         </p>
+                       </div>
                       
                       {!notification.read && (
                         <div className="w-2 h-2 bg-primary rounded-full flex-shrink-0 mt-2" />

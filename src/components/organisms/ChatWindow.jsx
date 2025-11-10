@@ -1,12 +1,15 @@
-import { useState, useEffect, useRef } from "react"
-import { formatDistanceToNow } from "date-fns"
-import { cn } from "@/utils/cn"
-import ApperIcon from "@/components/ApperIcon"
-import Button from "@/components/atoms/Button"
-import { messageService } from "@/services/api/messageService"
-import { userService } from "@/services/api/userService"
+import React, { useEffect, useRef, useState } from "react";
+import { formatDistanceToNow } from "date-fns";
+import { messageService } from "@/services/api/messageService";
+import { userService } from "@/services/api/userService";
+import { useSelector } from "react-redux";
+import ApperIcon from "@/components/ApperIcon";
+import Button from "@/components/atoms/Button";
+import { cn } from "@/utils/cn";
 
 const ChatWindow = ({ conversationId, onClose }) => {
+  const { user } = useSelector((state) => state.user)
+  const currentUserId = user?.userId || user?.Id || "1"
   const [messages, setMessages] = useState([])
   const [newMessage, setNewMessage] = useState("")
   const [loading, setLoading] = useState(false)
@@ -33,12 +36,14 @@ const ChatWindow = ({ conversationId, onClose }) => {
       const conversationMessages = allMessages.filter(msg => msg.conversationId === conversationId)
       setMessages(conversationMessages)
 
-      // Load other user info (assuming conversationId format like "user1-user2")
-      const userIds = conversationId.split("-")
-      const otherUserId = userIds.find(id => id !== "1") // Current user is ID 1
-      if (otherUserId) {
-        const user = await userService.getById(otherUserId)
-        setOtherUser(user)
+// Load other user info (assuming conversationId format like "user1-user2")
+      if (conversationId && typeof conversationId === 'string') {
+        const userIds = conversationId.split("-")
+        const otherUserId = userIds.find(id => id !== currentUserId) 
+        if (otherUserId) {
+          const user = await userService.getById(otherUserId)
+          setOtherUser(user)
+        }
       }
     } catch (err) {
       setError("Failed to load conversation")
@@ -55,10 +60,10 @@ const ChatWindow = ({ conversationId, onClose }) => {
     e.preventDefault()
     if (!newMessage.trim()) return
 
-    try {
+try {
       const message = {
         conversationId,
-        senderId: "1", // Current user ID
+        sender_id_c: currentUserId,
         content: newMessage.trim(),
         read: false,
         createdAt: new Date().toISOString()
@@ -80,15 +85,16 @@ const ChatWindow = ({ conversationId, onClose }) => {
       {/* Header */}
       <div className="flex items-center justify-between p-3 border-b border-gray-200/50 bg-gradient-to-r from-secondary/10 to-primary/10 rounded-t-xl">
         <div className="flex items-center space-x-2">
-          {otherUser && (
+{otherUser && (
             <>
               <img
-                src={otherUser.profilePicture}
-                alt={otherUser.username}
+                src={otherUser.profile_picture_c || "/default-avatar.png"}
+                alt={otherUser.username_c || otherUser.Name || "User"}
                 className="w-8 h-8 rounded-full border-2 border-secondary/20"
+                onError={(e) => { e.target.src = "/default-avatar.png" }}
               />
               <div>
-                <p className="text-sm font-semibold text-gray-900">{otherUser.username}</p>
+                <span className="font-medium">{otherUser.username_c || otherUser.Name || "Unknown User"}</span>
                 <p className="text-xs text-green-500">Online</p>
               </div>
             </>
@@ -146,25 +152,25 @@ const ChatWindow = ({ conversationId, onClose }) => {
                 {messages.map((message) => (
                   <div
                     key={message.Id}
-                    className={cn(
+className={cn(
                       "flex",
-                      message.senderId === "1" ? "justify-end" : "justify-start"
+                      (message.senderId || message.sender_id_c?.Id || message.sender_id_c) === currentUserId ? "justify-end" : "justify-start"
                     )}
                   >
                     <div
                       className={cn(
                         "max-w-xs px-3 py-2 rounded-lg text-sm",
-                        message.senderId === "1"
+                        (message.senderId || message.sender_id_c?.Id || message.sender_id_c) === currentUserId
                           ? "bg-gradient-to-r from-primary to-primary/90 text-white"
                           : "bg-gray-100 text-gray-900"
                       )}
                     >
-                      <p>{message.content}</p>
+<p>{message.content_c || message.content || "No content"}</p>
                       <p className={cn(
                         "text-xs mt-1",
-                        message.senderId === "1" ? "text-white/70" : "text-gray-500"
+                        (message.senderId || message.sender_id_c?.Id || message.sender_id_c) === currentUserId ? "text-white/70" : "text-gray-500"
                       )}>
-                        {formatDistanceToNow(new Date(message.createdAt), { addSuffix: true })}
+                        {formatDistanceToNow(new Date(message.CreatedOn || message.createdAt || Date.now()), { addSuffix: true })}
                       </p>
                     </div>
                   </div>

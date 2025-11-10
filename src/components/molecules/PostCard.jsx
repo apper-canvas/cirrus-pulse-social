@@ -1,14 +1,28 @@
-import { useState, useEffect } from "react"
-import { formatDistanceToNow } from "date-fns"
-import { cn } from "@/utils/cn"
-import { toast } from "react-toastify"
-import ApperIcon from "@/components/ApperIcon"
-import Avatar from "@/components/atoms/Avatar"
-import Button from "@/components/atoms/Button"
-import { commentService } from "@/services/api/commentService"
+import React, { useEffect, useState } from "react";
+import { useSelector } from "react-redux";
+import { formatDistanceToNow } from "date-fns";
+import { toast } from "react-toastify";
+import { commentService } from "@/services/api/commentService";
+import ApperIcon from "@/components/ApperIcon";
+import Button from "@/components/atoms/Button";
+import Avatar from "@/components/atoms/Avatar";
+import { cn } from "@/utils/cn";
 
 const PostCard = ({ post, onLike, onComment, className }) => {
-  const [isLiked, setIsLiked] = useState(post.likes.includes("1")) // Current user ID is "1"
+const { user } = useSelector((state) => state.user)
+  const currentUserId = user?.userId || user?.Id || "1"
+  
+  // Parse likes from database format
+  const parseLikes = (likesData) => {
+    try {
+      return JSON.parse(likesData || "[]")
+    } catch {
+      return Array.isArray(likesData) ? likesData : []
+    }
+  }
+  
+  const postLikes = parseLikes(post.likes_c || post.likes)
+  const [isLiked, setIsLiked] = useState(postLikes.includes(currentUserId.toString()))
   const [showComments, setShowComments] = useState(false)
   const [commentText, setCommentText] = useState("")
   const [likesCount, setLikesCount] = useState(post.likes.length)
@@ -67,10 +81,10 @@ useEffect(() => {
     if (!commentText.trim()) return
 
     try {
-      const newComment = await commentService.create({
-        postId: post.Id,
-        authorId: "1",
-        content: commentText.trim()
+const newComment = await commentService.create({
+        post_id_c: post.Id,
+        author_id_c: currentUserId,
+        content_c: commentText.trim()
       })
       
       setComments(prev => [...prev, newComment])
@@ -91,7 +105,7 @@ useEffect(() => {
 
   const handleCommentLike = async (commentId) => {
     try {
-      const result = await commentService.likeComment(commentId, "1")
+const result = await commentService.likeComment(commentId, currentUserId)
       setCommentLikes(prev => ({
         ...prev,
         [commentId]: {
@@ -117,10 +131,10 @@ useEffect(() => {
     if (!replyText.trim()) return
 
     try {
-      const newReply = await commentService.replyToComment(parentCommentId, {
-        postId: post.Id,
-        authorId: "1",
-        content: replyText.trim()
+const newReply = await commentService.replyToComment(parentCommentId, {
+        post_id_c: post.Id,
+        author_id_c: currentUserId,
+        content_c: replyText.trim()
       })
       
       setComments(prev => [...prev, newReply])
@@ -156,16 +170,16 @@ useEffect(() => {
       <div key={comment.Id} className={cn("flex space-x-3", isReply && "ml-8 mt-2")}>
         <Avatar size="sm" fallback={comment.author?.username?.[0]?.toUpperCase() || "U"} />
         <div className="flex-1">
-          <div className="bg-gray-50 rounded-lg px-3 py-2">
+<div className="bg-gray-50 rounded-lg px-3 py-2">
             <div className="flex items-center space-x-2 mb-1">
               <span className="font-semibold text-sm text-gray-900">
-                {comment.author?.username || 'Unknown User'}
+                {comment.author?.username_c || comment.author?.Name || 'Unknown User'}
               </span>
               <span className="text-xs text-gray-500">
-                {formatDistanceToNow(new Date(comment.createdAt), { addSuffix: true })}
+                {formatDistanceToNow(new Date(comment.CreatedOn || comment.createdAt), { addSuffix: true })}
               </span>
             </div>
-            <p className="text-sm text-gray-800">{comment.content}</p>
+            <p className="text-sm text-gray-800">{comment.content_c || comment.content}</p>
           </div>
           
           <div className="flex items-center space-x-4 mt-2">
@@ -244,21 +258,21 @@ useEffect(() => {
       <div className="p-4 pb-3">
         <div className="flex items-center space-x-3">
           <Avatar
-            src={post.author?.profilePicture}
+src={post.author_id_c?.profile_picture_c || ""}
             alt={post.author?.username}
             size="md"
             online={true}
           />
           <div className="flex-1">
-            <div className="flex items-center space-x-2">
-              <h3 className="font-semibold text-gray-900">{post.author?.username}</h3>
-              <span className="text-gray-400">•</span>
-              <span className="text-gray-500 text-sm">
-                {formatDistanceToNow(new Date(post.createdAt), { addSuffix: true })}
+<div className="flex items-center space-x-2">
+               <h3 className="font-semibold text-gray-900">{post.author_id_c?.Name || 'Unknown User'}</h3>
+               <span className="text-gray-400">•</span>
+               <span className="text-gray-500 text-sm">
+                 {formatDistanceToNow(new Date(post.CreatedOn || post.createdAt), { addSuffix: true })}
               </span>
             </div>
-            {post.author?.bio && (
-              <p className="text-xs text-gray-500 mt-1">{post.author.bio}</p>
+{post.author_id_c?.bio_c && (
+               <p className="text-xs text-gray-500 mt-1">{post.author_id_c.bio_c}</p>
             )}
           </div>
           <button className="p-2 hover:bg-gray-100 rounded-lg transition-colors duration-150">
@@ -269,16 +283,16 @@ useEffect(() => {
 
       {/* Post Content */}
       <div className="px-4 pb-3">
-        {post.content && (
-          <p className="text-gray-900 leading-relaxed">{post.content}</p>
+{(post.content_c || post.content) && (
+           <p className="text-gray-900 leading-relaxed">{post.content_c || post.content}</p>
         )}
       </div>
 
-      {/* Post Image */}
-      {post.imageUrl && (
+{/* Post Image */}
+      {(post.image_url_c || post.imageUrl) && (
         <div className="px-4 pb-3">
           <img
-            src={post.imageUrl}
+            src={post.image_url_c || post.imageUrl}
             alt="Post content"
             className="w-full rounded-lg object-cover max-h-96 hover:scale-[1.02] transition-transform duration-200 cursor-pointer"
           />
@@ -311,7 +325,7 @@ useEffect(() => {
               className="flex items-center space-x-2 text-gray-500 hover:text-secondary transition-all duration-200 hover:scale-105"
             >
               <ApperIcon name="MessageCircle" className="h-5 w-5" />
-              <span className="text-sm font-medium">{post.commentCount}</span>
+<span className="text-sm font-medium">{post.comment_count_c || 0}</span>
             </button>
 
             <button className="flex items-center space-x-2 text-gray-500 hover:text-accent transition-all duration-200 hover:scale-105">

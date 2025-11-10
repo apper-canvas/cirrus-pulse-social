@@ -7,14 +7,19 @@ import ApperIcon from "@/components/ApperIcon";
 import Avatar from "@/components/atoms/Avatar";
 import Friends from "@/components/pages/Friends";
 import PostComposer from "@/components/molecules/PostComposer";
-
+import { useSelector } from "react-redux"
 const Sidebar = () => {
   const navigate = useNavigate()
-  const [isPostModalOpen, setIsPostModalOpen] = useState(false)
+  const { user } = useSelector((state) => state.user)
+  const currentUserId = user?.userId || user?.Id || "1"
+const [isPostModalOpen, setIsPostModalOpen] = useState(false)
 
   const handleCreatePost = async (postData) => {
     try {
-      await postService.create(postData)
+await postService.create({
+        ...postData,
+        author_id_c: currentUserId
+      })
       toast.success('Post created successfully!')
       setIsPostModalOpen(false)
       navigate('/') // Navigate to home to see the new post
@@ -50,7 +55,7 @@ const Sidebar = () => {
     },
     {
       name: "Profile",
-      path: "/profile/1",
+path: `/profile/${currentUserId}`,
       icon: "User"
     }
   ]

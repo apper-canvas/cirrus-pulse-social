@@ -13,8 +13,8 @@ const ConversationCard = ({ conversation, isActive, onClick, className }) => {
       )}
     >
       <Avatar
-        src={conversation.otherUser.profilePicture}
-        alt={conversation.otherUser.username}
+src={conversation.otherUser?.profile_picture_c || ""}
+         alt={conversation.otherUser?.username_c || "User"}
         size="md"
         online={conversation.otherUser.online}
       />
@@ -25,11 +25,11 @@ const ConversationCard = ({ conversation, isActive, onClick, className }) => {
             "font-semibold truncate",
             conversation.unreadCount > 0 ? "text-gray-900" : "text-gray-800"
           )}>
-            {conversation.otherUser.username}
-          </h3>
+{conversation.otherUser?.username_c || conversation.otherUser?.Name || "User"}
+           </h3>
           <span className="text-xs text-gray-500">
-            {formatDistanceToNow(new Date(conversation.lastMessage.createdAt), { addSuffix: true })}
-          </span>
+{formatDistanceToNow(new Date(conversation.lastMessage?.createdAt || conversation.lastMessage?.CreatedOn), { addSuffix: true })}
+           </span>
         </div>
         
         <div className="flex items-center justify-between">
@@ -37,8 +37,8 @@ const ConversationCard = ({ conversation, isActive, onClick, className }) => {
             "text-sm truncate",
             conversation.unreadCount > 0 ? "font-medium text-gray-900" : "text-gray-600"
           )}>
-            {conversation.lastMessage.senderId === "1" && "You: "}
-            {conversation.lastMessage.content}
+{(conversation.lastMessage?.senderId === conversation.currentUserId || conversation.lastMessage?.sender_id_c?.Id === conversation.currentUserId) && "You: "}
+             {conversation.lastMessage?.content_c || conversation.lastMessage?.content}
           </p>
           
           {conversation.unreadCount > 0 && (
