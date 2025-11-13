@@ -16,7 +16,7 @@ const ConversationCard = ({ conversation, isActive, onClick, className }) => {
 src={conversation.otherUser?.profile_picture_c || ""}
          alt={conversation.otherUser?.username_c || "User"}
         size="md"
-        online={conversation.otherUser.online}
+        online={conversation.otherUser?.online}
       />
       
       <div className="flex-1 min-w-0">
