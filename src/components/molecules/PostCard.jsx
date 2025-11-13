@@ -3,17 +3,16 @@ import { useSelector } from "react-redux";
 import { formatDistanceToNow } from "date-fns";
 import { toast } from "react-toastify";
 import { commentService } from "@/services/api/commentService";
-import { likeService } from "@/services/api/likeService";
 import ApperIcon from "@/components/ApperIcon";
 import Button from "@/components/atoms/Button";
 import Avatar from "@/components/atoms/Avatar";
 import { cn } from "@/utils/cn";
 
-const PostCard = ({ post, onUpdate, className }) => {
-  const { user } = useSelector((state) => state.user)
+const PostCard = ({ post, onLike, onComment, className }) => {
+const { user } = useSelector((state) => state.user)
   const currentUserId = user?.userId || user?.Id || "1"
   
-  // State for post interactions
+  // Parse likes from database format
   const parseLikes = (likesData) => {
     try {
       return JSON.parse(likesData || "[]")
@@ -31,16 +30,16 @@ const [likesCount, setLikesCount] = useState((post.likes || []).length)
   const [commentLikes, setCommentLikes] = useState({})
   const [replyForms, setReplyForms] = useState({})
   const [replyTexts, setReplyTexts] = useState({})
-  const [isSaved, setIsSaved] = useState(false)
   const handleLike = async () => {
     try {
       const newLikedState = !isLiked
       setIsLiked(newLikedState)
-setLikesCount(prev => newLikedState ? prev + 1 : prev - 1)
+      setLikesCount(prev => newLikedState ? prev + 1 : prev - 1)
       
-      if (onUpdate?.onLike) {
-        await onUpdate.onLike(post.Id, newLikedState)
+      if (onLike) {
+        await onLike(post.Id, newLikedState)
       }
+      
       if (newLikedState) {
         toast.success("Post liked!", { autoClose: 1000 })
       }
@@ -53,105 +52,27 @@ setLikesCount(prev => newLikedState ? prev + 1 : prev - 1)
   }
 
 useEffect(() => {
-    // Fetch comments on component mount to ensure they're available after page refresh
-    fetchComments()
-    checkSaveStatus()
-  }, [post.Id])
-
-  // Separate effect to handle comments visibility toggle
-  useEffect(() => {
-    if (showComments && comments.length === 0) {
+    if (showComments) {
       fetchComments()
     }
-  }, [showComments])
+  }, [showComments, post.Id])
 
-const fetchComments = async () => {
+  const fetchComments = async () => {
     try {
       const postComments = await commentService.getByPostId(post.Id)
       setComments(postComments)
       
       // Initialize comment likes state
-const likesState = {}
+      const likesState = {}
       postComments.forEach(comment => {
-        // Initialize like state for each comment (will be updated after fetching likes)
-        likesState[comment.Id] = {
-          isLiked: false,
-          count: 0
+likesState[comment.Id] = {
+          isLiked: (comment.likes || []).includes("1"),
+          count: (comment.likes || []).length
         }
       })
       setCommentLikes(likesState)
-      
-      // Fetch likes for each comment
-      postComments.forEach(async (comment) => {
-        try {
-          const commentLikes = await likeService.getLikesByComment(comment.Id)
-          const userLike = await likeService.getUserLikeForComment(comment.Id, currentUserId)
-          
-          setCommentLikes(prev => ({
-            ...prev,
-            [comment.Id]: {
-              isLiked: !!userLike,
-              count: commentLikes.length
-            }
-          }))
-        } catch (error) {
-          console.error(`Error fetching likes for comment ${comment.Id}:`, error)
-        }
-      })
     } catch (error) {
       toast.error("Failed to load comments")
-    }
-  }
-
-  const checkSaveStatus = async () => {
-    try {
-      const { postService } = await import('@/services/api/postService')
-      const saveStatus = await postService.checkSaveStatus(post.Id, currentUserId)
-      setIsSaved(saveStatus)
-    } catch (error) {
-      console.error("Failed to check save status:", error)
-    }
-  }
-
-  const handleSave = async () => {
-    try {
-      const { postService } = await import('@/services/api/postService')
-      
-      if (isSaved) {
-        await postService.unsavePost(post.Id, currentUserId)
-        setIsSaved(false)
-        toast.success("Post removed from saved", { autoClose: 1000 })
-      } else {
-        await postService.savePost(post.Id, currentUserId)
-        setIsSaved(true)
-        toast.success("Post saved!", { autoClose: 1000 })
-      }
-    } catch (error) {
-      toast.error("Failed to save post")
-    }
-  }
-
-  const handleShare = async () => {
-    try {
-      const shareData = {
-        title: `Post by ${post.author_id_c?.Name || 'Unknown User'}`,
-        text: post.content_c || post.content || '',
-        url: window.location.href
-      }
-
-      if (navigator.share) {
-        await navigator.share(shareData)
-        toast.success("Post shared!", { autoClose: 1000 })
-      } else {
-        // Fallback to clipboard
-        const shareText = `${shareData.title}\n${shareData.text}\n${shareData.url}`
-        await navigator.clipboard.writeText(shareText)
-        toast.success("Post link copied to clipboard!", { autoClose: 1000 })
-      }
-    } catch (error) {
-      if (error.name !== 'AbortError') {
-        toast.error("Failed to share post")
-      }
     }
   }
 
@@ -159,7 +80,7 @@ const likesState = {}
     e.preventDefault()
     if (!commentText.trim()) return
 
-try {
+    try {
 const newComment = await commentService.create({
         post_id_c: post.Id,
         author_id_c: currentUserId,
@@ -174,29 +95,33 @@ const newComment = await commentService.create({
       setCommentText("")
       toast.success("Comment added!", { autoClose: 1000 })
       
-      if (onUpdate?.onComment) {
-        await onUpdate.onComment(post.Id, commentText.trim())
+      if (onComment) {
+        await onComment(post.Id, commentText.trim())
       }
     } catch (error) {
       toast.error("Failed to add comment")
     }
   }
 
-const handleCommentLike = async (commentId) => {
+  const handleCommentLike = async (commentId) => {
     try {
-      const result = await commentService.likeComment(commentId, currentUserId)
+const result = await commentService.likeComment(commentId, currentUserId)
+      setCommentLikes(prev => ({
+        ...prev,
+        [commentId]: {
+          isLiked: result.isLiked,
+          count: result.likesCount
+        }
+      }))
       
-      if (result) {
-        setCommentLikes(prev => ({
-          ...prev,
-          [commentId]: {
-            isLiked: result.isLiked,
-            count: result.likesCount
-          }
-        }))
-        
-        toast.success(result.isLiked ? "Comment liked!" : "Comment unliked!", { autoClose: 800 })
-      }
+      // Update the comment in comments array
+      setComments(prev => prev.map(comment => 
+        comment.Id === parseInt(commentId) 
+          ? { ...comment, likes: result.likes }
+          : comment
+      ))
+      
+      toast.success(result.isLiked ? "Comment liked!" : "Comment unliked!", { autoClose: 800 })
     } catch (error) {
       toast.error("Failed to like comment")
     }
@@ -217,6 +142,7 @@ const newReply = await commentService.replyToComment(parentCommentId, {
         ...prev,
         [newReply.Id]: { isLiked: false, count: 0 }
       }))
+      
       // Close reply form and clear text
       setReplyForms(prev => ({ ...prev, [parentCommentId]: false }))
       setReplyTexts(prev => ({ ...prev, [parentCommentId]: "" }))
@@ -234,28 +160,23 @@ const newReply = await commentService.replyToComment(parentCommentId, {
     }))
   }
 
-const renderComment = (comment, isReply = false) => {
+  const renderComment = (comment, isReply = false) => {
     const likes = commentLikes[comment.Id] || { isLiked: false, count: 0 }
     const replies = comments.filter(c => c.parentId === comment.Id)
     const showReplyForm = replyForms[comment.Id]
     const replyText = replyTexts[comment.Id] || ""
 
     return (
-      <div key={comment.Id} className={cn("flex space-x-3", isReply && "ml-12")}>
-        <div className="flex-shrink-0">
-        <Avatar 
-          size="sm" 
-          src={comment.author_id_c?.profile_picture_c}
-          fallback={comment.author_id_c?.Name?.[0]?.toUpperCase() || comment.author_id_c?.username_c?.[0]?.toUpperCase() || "U"}
-        />
-        </div>
-        <div className="flex-1 min-w-0">
-<div className="bg-gray-100 rounded-lg px-3 py-2">
-            <div className="flex items-center space-x-2">
-              <span className="font-medium text-sm text-gray-900">
-{comment.author_id_c?.Name || comment.author_id_c?.username_c || 'Unknown User'}
+      <div key={comment.Id} className={cn("flex space-x-3", isReply && "ml-8 mt-2")}>
+        <Avatar size="sm" fallback={comment.author?.username?.[0]?.toUpperCase() || "U"} />
+        <div className="flex-1">
+<div className="bg-gray-50 rounded-lg px-3 py-2">
+            <div className="flex items-center space-x-2 mb-1">
+              <span className="font-semibold text-sm text-gray-900">
+                {comment.author?.username_c || comment.author?.Name || 'Unknown User'}
               </span>
               <span className="text-xs text-gray-500">
+                {formatDistanceToNow(new Date(comment.CreatedOn || comment.createdAt), { addSuffix: true })}
               </span>
             </div>
             <p className="text-sm text-gray-800">{comment.content_c || comment.content}</p>
@@ -266,7 +187,7 @@ const renderComment = (comment, isReply = false) => {
               onClick={() => handleCommentLike(comment.Id)}
               className={cn(
                 "flex items-center space-x-1 text-xs font-medium transition-colors",
-likes.isLiked 
+                likes.isLiked 
                   ? "text-primary" 
                   : "text-gray-500 hover:text-primary"
               )}
@@ -334,29 +255,27 @@ likes.isLiked
       className
     )}>
       {/* Post Header */}
-<div className="p-4 pb-3">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-3">
-            <Avatar
-              src={post.author_id_c?.profile_picture_c || ""}
-              alt={post.author_id_c?.username_c || post.author_id_c?.Name}
-              size="md"
-              online={true}
-            />
-            <div className="flex-1">
-              <div className="flex items-center space-x-2">
-                <h3 className="font-semibold text-gray-900">{post.author_id_c?.Name || 'Unknown User'}</h3>
-                <span className="text-gray-400">•</span>
-                <span className="text-sm text-gray-500">
-                   {formatDistanceToNow(new Date(post.CreatedOn || post.createdAt), { addSuffix: true })}
-                </span>
-              </div>
-              {post.author_id_c?.bio_c && (
-                <p className="text-xs text-gray-500 mt-1">{post.author_id_c.bio_c}</p>
-              )}
+      <div className="p-4 pb-3">
+        <div className="flex items-center space-x-3">
+          <Avatar
+src={post.author_id_c?.profile_picture_c || ""}
+            alt={post.author?.username}
+            size="md"
+            online={true}
+          />
+          <div className="flex-1">
+<div className="flex items-center space-x-2">
+               <h3 className="font-semibold text-gray-900">{post.author_id_c?.Name || 'Unknown User'}</h3>
+               <span className="text-gray-400">•</span>
+               <span className="text-gray-500 text-sm">
+                 {formatDistanceToNow(new Date(post.CreatedOn || post.createdAt), { addSuffix: true })}
+              </span>
             </div>
+{post.author_id_c?.bio_c && (
+               <p className="text-xs text-gray-500 mt-1">{post.author_id_c.bio_c}</p>
+            )}
           </div>
-          <button className="p-2 rounded-full hover:bg-gray-100 transition-colors">
+          <button className="p-2 hover:bg-gray-100 rounded-lg transition-colors duration-150">
             <ApperIcon name="MoreHorizontal" className="h-4 w-4 text-gray-400" />
           </button>
         </div>
@@ -401,36 +320,21 @@ likes.isLiked
               <span className="text-sm font-medium">{likesCount}</span>
             </button>
 
-<button
+            <button
               onClick={() => setShowComments(!showComments)}
               className="flex items-center space-x-2 text-gray-500 hover:text-secondary transition-all duration-200 hover:scale-105"
             >
               <ApperIcon name="MessageCircle" className="h-5 w-5" />
-              <span className="text-sm font-medium">{comments.length}</span>
+<span className="text-sm font-medium">{post.comment_count_c || 0}</span>
             </button>
 
-            <button 
-              onClick={handleShare}
-              className="flex items-center space-x-2 text-gray-500 hover:text-accent transition-all duration-200 hover:scale-105"
-            >
+            <button className="flex items-center space-x-2 text-gray-500 hover:text-accent transition-all duration-200 hover:scale-105">
               <ApperIcon name="Share" className="h-5 w-5" />
             </button>
           </div>
 
-          <button 
-            onClick={handleSave}
-            className={cn(
-              "transition-colors duration-150",
-              isSaved ? "text-accent" : "text-gray-400 hover:text-gray-600"
-            )}
-          >
-            <ApperIcon 
-              name="Bookmark" 
-              className={cn(
-                "h-5 w-5 transition-all duration-200",
-                isSaved ? "fill-current" : ""
-              )} 
-            />
+          <button className="text-gray-400 hover:text-gray-600 transition-colors duration-150">
+            <ApperIcon name="Bookmark" className="h-5 w-5" />
           </button>
         </div>
       </div>

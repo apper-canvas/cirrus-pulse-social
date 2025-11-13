@@ -1,4 +1,5 @@
-import { getApperClient } from "@/services/apperClient";
+import { getApperClient } from "@/services/apperClient"
+
 export const postService = {
   async getAll() {
     try {
@@ -8,7 +9,7 @@ export const postService = {
         return []
       }
 
-const response = await apperClient.fetchRecords('post_c', {
+      const response = await apperClient.fetchRecords('post_c', {
         fields: [
           {"field": {"Name": "Name"}},
           {"field": {"Name": "content_c"}},
@@ -17,13 +18,10 @@ const response = await apperClient.fetchRecords('post_c', {
           {"field": {"Name": "likes_c"}},
           {"field": {"Name": "reactions_c"}},
           {"field": {"Name": "CreatedOn"}},
-          {"field": {"Name": "author_id_c"}, "referenceField": {"field": {"Name": "Name"}}},
-          {"field": {"Name": "author_id_c"}, "referenceField": {"field": {"Name": "username_c"}}},
-          {"field": {"Name": "author_id_c"}, "referenceField": {"field": {"Name": "profile_picture_c"}}},
-          {"field": {"Name": "author_id_c"}, "referenceField": {"field": {"Name": "bio_c"}}}
+          {"field": {"Name": "author_id_c"}}
         ],
         orderBy: [{"fieldName": "CreatedOn", "sorttype": "DESC"}],
-        pagingInfo: { limit: 20, offset: 0 }
+        pagingInfo: { limit: 100, offset: 0 }
       })
 
       if (!response.success) {
@@ -46,7 +44,7 @@ const response = await apperClient.fetchRecords('post_c', {
         return null
       }
 
-const response = await apperClient.getRecordById('post_c', parseInt(id), {
+      const response = await apperClient.getRecordById('post_c', parseInt(id), {
         fields: [
           {"field": {"Name": "Name"}},
           {"field": {"Name": "content_c"}},
@@ -55,15 +53,12 @@ const response = await apperClient.getRecordById('post_c', parseInt(id), {
           {"field": {"Name": "likes_c"}},
           {"field": {"Name": "reactions_c"}},
           {"field": {"Name": "CreatedOn"}},
-          {"field": {"Name": "author_id_c"}, "referenceField": {"field": {"Name": "Name"}}},
-          {"field": {"Name": "author_id_c"}, "referenceField": {"field": {"Name": "username_c"}}},
-          {"field": {"Name": "author_id_c"}, "referenceField": {"field": {"Name": "profile_picture_c"}}},
-          {"field": {"Name": "author_id_c"}, "referenceField": {"field": {"Name": "bio_c"}}}
+          {"field": {"Name": "author_id_c"}}
         ]
       })
 
       if (!response.success) {
-        console.error(response.message)
+        console.error("Failed to fetch post:", response.message)
         return null
       }
 
@@ -82,7 +77,7 @@ const response = await apperClient.getRecordById('post_c', parseInt(id), {
         return []
       }
 
-const response = await apperClient.fetchRecords('post_c', {
+      const response = await apperClient.fetchRecords('post_c', {
         fields: [
           {"field": {"Name": "Name"}},
           {"field": {"Name": "content_c"}},
@@ -91,10 +86,7 @@ const response = await apperClient.fetchRecords('post_c', {
           {"field": {"Name": "likes_c"}},
           {"field": {"Name": "reactions_c"}},
           {"field": {"Name": "CreatedOn"}},
-          {"field": {"Name": "author_id_c"}, "referenceField": {"field": {"Name": "Name"}}},
-          {"field": {"Name": "author_id_c"}, "referenceField": {"field": {"Name": "username_c"}}},
-          {"field": {"Name": "author_id_c"}, "referenceField": {"field": {"Name": "profile_picture_c"}}},
-          {"field": {"Name": "author_id_c"}, "referenceField": {"field": {"Name": "bio_c"}}}
+          {"field": {"Name": "author_id_c"}}
         ],
         where: [{"FieldName": "author_id_c", "Operator": "EqualTo", "Values": [parseInt(userId)]}],
         orderBy: [{"fieldName": "CreatedOn", "sorttype": "DESC"}],
@@ -122,7 +114,7 @@ const response = await apperClient.fetchRecords('post_c', {
       }
 
       // For now, return all posts - in production, you'd filter by friends
-const response = await apperClient.fetchRecords('post_c', {
+      const response = await apperClient.fetchRecords('post_c', {
         fields: [
           {"field": {"Name": "Name"}},
           {"field": {"Name": "content_c"}},
@@ -131,17 +123,14 @@ const response = await apperClient.fetchRecords('post_c', {
           {"field": {"Name": "likes_c"}},
           {"field": {"Name": "reactions_c"}},
           {"field": {"Name": "CreatedOn"}},
-          {"field": {"Name": "author_id_c"}, "referenceField": {"field": {"Name": "Name"}}},
-          {"field": {"Name": "author_id_c"}, "referenceField": {"field": {"Name": "username_c"}}},
-          {"field": {"Name": "author_id_c"}, "referenceField": {"field": {"Name": "profile_picture_c"}}},
-          {"field": {"Name": "author_id_c"}, "referenceField": {"field": {"Name": "bio_c"}}}
+          {"field": {"Name": "author_id_c"}}
         ],
         orderBy: [{"fieldName": "CreatedOn", "sorttype": "DESC"}],
         pagingInfo: { limit: 50, offset: 0 }
       })
 
       if (!response.success) {
-        console.error(response.message)
+        console.error("Failed to fetch feed posts:", response.message)
         return []
       }
 
@@ -160,10 +149,10 @@ const response = await apperClient.fetchRecords('post_c', {
         return null
       }
 
-const params = {
+      const params = {
         records: [{
-          content_c: postData.content_c,
           Name: postData.Name || "Post",
+          content_c: postData.content_c || postData.content,
           image_url_c: postData.image_url_c || postData.imageUrl || "",
           comment_count_c: 0,
           likes_c: "[]", // Empty array as string
@@ -365,102 +354,3 @@ const params = {
     }
   }
 }
-
-// Save post functionality
-const savePost = async (postId, userId) => {
-  try {
-    const { ApperClient } = window.ApperSDK
-    const apperClient = new ApperClient({
-      apperProjectId: import.meta.env.VITE_APPER_PROJECT_ID,
-      apperPublicKey: import.meta.env.VITE_APPER_PUBLIC_KEY
-    })
-
-    const params = {
-      records: [{
-        Name: `Saved Post ${postId}`,
-        post_id_c: parseInt(postId),
-        user_id_c: parseInt(userId)
-      }]
-    }
-
-    const response = await apperClient.createRecord('saved_post_c', params)
-
-    if (!response.success) {
-      console.error("Failed to save post:", response.message)
-      throw new Error(response.message)
-    }
-
-    return response.results?.[0]?.data
-  } catch (error) {
-    console.error("Error saving post:", error?.response?.data?.message || error)
-    throw error
-  }
-}
-
-const unsavePost = async (postId, userId) => {
-  try {
-    const { ApperClient } = window.ApperSDK
-    const apperClient = new ApperClient({
-      apperProjectId: import.meta.env.VITE_APPER_PROJECT_ID,
-      apperPublicKey: import.meta.env.VITE_APPER_PUBLIC_KEY
-    })
-
-    // First find the saved post record
-    const findResponse = await apperClient.fetchRecords('saved_post_c', {
-      fields: [{"field": {"Name": "Id"}}],
-      where: [
-        {"FieldName": "post_id_c", "Operator": "EqualTo", "Values": [parseInt(postId)]},
-        {"FieldName": "user_id_c", "Operator": "EqualTo", "Values": [parseInt(userId)]}
-      ]
-    })
-
-    if (findResponse.success && findResponse.data.length > 0) {
-      const savedPostId = findResponse.data[0].Id
-      const deleteResponse = await apperClient.deleteRecord('saved_post_c', {
-        RecordIds: [savedPostId]
-      })
-
-      if (!deleteResponse.success) {
-        throw new Error(deleteResponse.message)
-      }
-
-      return true
-    }
-
-    return false
-  } catch (error) {
-    console.error("Error unsaving post:", error?.response?.data?.message || error)
-    throw error
-  }
-}
-
-const checkSaveStatus = async (postId, userId) => {
-  try {
-    const { ApperClient } = window.ApperSDK
-    const apperClient = new ApperClient({
-      apperProjectId: import.meta.env.VITE_APPER_PROJECT_ID,
-      apperPublicKey: import.meta.env.VITE_APPER_PUBLIC_KEY
-    })
-
-    const response = await apperClient.fetchRecords('saved_post_c', {
-      fields: [{"field": {"Name": "Id"}}],
-      where: [
-        {"FieldName": "post_id_c", "Operator": "EqualTo", "Values": [parseInt(postId)]},
-        {"FieldName": "user_id_c", "Operator": "EqualTo", "Values": [parseInt(userId)]}
-      ]
-    })
-
-    return response.success && response.data.length > 0
-  } catch (error) {
-    console.error("Error checking save status:", error?.response?.data?.message || error)
-    return false
-  }
-}
-
-// Add save/unsave methods to the main service object
-postService.savePost = savePost;
-postService.unsavePost = unsavePost;
-postService.checkSaveStatus = checkSaveStatus;
-
-// Export the save/unsave functions
-export { savePost, unsavePost, checkSaveStatus };
