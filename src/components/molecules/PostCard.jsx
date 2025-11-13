@@ -3,29 +3,30 @@ import { useSelector } from "react-redux";
 import { formatDistanceToNow } from "date-fns";
 import { toast } from "react-toastify";
 import { commentService } from "@/services/api/commentService";
-import ApperIcon from "@/components/ApperIcon";
-import Button from "@/components/atoms/Button";
-import Avatar from "@/components/atoms/Avatar";
 import { cn } from "@/utils/cn";
+import ApperIcon from "@/components/ApperIcon";
+import Avatar from "@/components/atoms/Avatar";
+import Button from "@/components/atoms/Button";
 
 const PostCard = ({ post, onLike, onComment, className }) => {
 const { user } = useSelector((state) => state.user)
   const currentUserId = user?.userId || user?.Id || "1"
   
   // Parse likes from database format
-  const parseLikes = (likesData) => {
+const parseLikes = (likesData) => {
     try {
       return JSON.parse(likesData || "[]")
     } catch {
       return Array.isArray(likesData) ? likesData : []
     }
   }
-  
+
+// Ensure postLikes is always an array
   const postLikes = parseLikes(post.likes_c || post.likes)
   const [isLiked, setIsLiked] = useState(postLikes.includes(currentUserId.toString()))
   const [showComments, setShowComments] = useState(false)
   const [commentText, setCommentText] = useState("")
-const [likesCount, setLikesCount] = useState((post.likes || []).length)
+  const [likesCount, setLikesCount] = useState(postLikes.length)
   const [comments, setComments] = useState([])
   const [commentLikes, setCommentLikes] = useState({})
   const [replyForms, setReplyForms] = useState({})
