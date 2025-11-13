@@ -23,7 +23,7 @@ const parseLikes = (likesData) => {
 
 // Ensure postLikes is always an array
   const postLikes = parseLikes(post.likes_c || post.likes)
-  const [isLiked, setIsLiked] = useState(postLikes.includes(currentUserId.toString()))
+  const [isLiked, setIsLiked] = useState(postLikes?.includes(currentUserId?.toString()))
   const [showComments, setShowComments] = useState(false)
   const [commentText, setCommentText] = useState("")
   const [likesCount, setLikesCount] = useState(postLikes.length)
